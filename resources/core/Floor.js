@@ -17,7 +17,6 @@ export class Floor {
                 if (child.isMesh) {
                     child.material.roughness = 1;
                     child.material.metalness = 0;
-                    child.material.envMapIntensity = 0; // 禁用環境貼圖強度
                 }
             });
 
@@ -50,7 +49,15 @@ export class Floor {
         });
 
         return config.positions.map(pos => {
-            const mesh = new THREE.Mesh(geometry, material);
+            const mesh = new THREE.Mesh(geometry, material.clone());
+            mesh.userData = {
+                id: config.id,
+                mechanics: config.mechanics,
+                originalColor: parseInt(config.color),
+                standingTimer: 0,
+                activePlayers: new Set(),
+                isDisappeared: false
+            };
             mesh.position.set(
                 pos.x,
                 pos.y + config.size.height / 2,
@@ -58,5 +65,54 @@ export class Floor {
             );
             return mesh;
         });
+    }
+
+    static updateMechanics(floor, deltaTime) {
+        // 如果地板已消失，檢查是否已過 3 秒需要復原
+        if (floor.userData.isDisappeared) {
+            const now = Date.now();
+            const elapsed = (now - floor.userData.disappearStartTime) / 1000;
+            if (elapsed >= 3) {
+                floor.visible = true;
+                floor.userData.isDisappeared = false;
+                floor.userData.standingTimer = 0;
+                floor.material.color.setHex(floor.userData.originalColor);
+                console.log(`地基已復原`);
+            }
+            return;
+        }
+
+        const mech = floor.userData.mechanics;
+        if (!mech) return;
+
+        const playerCount = floor.userData.activePlayers.size;
+
+        // 必須先確定 max_players 存在且大於 0
+        if (typeof mech.max_players === 'number' && mech.max_players > 0) {
+            if (playerCount >= mech.max_players) {
+                floor.visible = false;
+                floor.userData.isDisappeared = true;
+                floor.userData.disappearStartTime = Date.now(); // 記錄消失時間
+                console.log(`地基因人數過多消失`);
+                return;
+            }
+        }
+
+        // 規則 2: 只有 1 人站立計時
+        if (playerCount === 1 && mech.time_limit > 0) {
+            floor.userData.standingTimer += deltaTime;
+            if (mech.time_limit && floor.userData.standingTimer > mech.time_limit - 2) {
+                floor.material.color.setHex(parseInt(mech.warning_color));
+            }
+            if (mech.time_limit && floor.userData.standingTimer > mech.time_limit) {
+                floor.visible = false;
+                floor.userData.isDisappeared = true;
+                floor.userData.disappearStartTime = Date.now(); // 記錄消失時間
+                console.log(`地基因站立超時消失`);
+            }
+        } else {
+            floor.userData.standingTimer = 0;
+            floor.material.color.setHex(floor.userData.originalColor);
+        }
     }
 }

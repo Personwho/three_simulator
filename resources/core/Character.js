@@ -5,13 +5,13 @@ export class Character {
     isWaiting = false; // 是否正在停留
     waitTimeStart = 0; // 開始停留的時間
 
-    constructor(model, camera, isPlayer = false, moveSpeed = 1, gravity = -9.8) {
+    constructor(model, camera, isPlayer = false, config = {}) {
         this.model = model;
         this.camera = camera;
-        this.moveSpeed = moveSpeed;
-        this.gravity = gravity;
+        this.gravity = -9.8;
         this.velocityY = 0;
         this.isPlayer = isPlayer; // 標記是否為玩家
+        this.onFall = null; // 掉落時的回呼函式
 
         this.keys = {};
         this.raycaster = new THREE.Raycaster();
@@ -23,6 +23,33 @@ export class Character {
             // 避免視窗失去焦點後按鍵狀態卡住
             window.addEventListener('blur', () => { this.keys = {}; });
         }
+
+        this.role = config.role; // T, H, D
+        this.team = config.team; // A, B, C
+        this.statusEffects = []; // { name, type, duration, value }
+        this.baseMoveSpeed = config.moveSpeed || 1;
+        this.currentMoveSpeed = this.baseMoveSpeed;
+
+        if (config.rotation) {
+            this.model.rotation.set(
+                (config.rotation.x || 0) * (Math.PI / 180),
+                (config.rotation.y || 0) * (Math.PI / 180),
+                (config.rotation.z || 0) * (Math.PI / 180)
+            );
+        }
+    }
+
+    addStatusEffect(effect) {
+        this.statusEffects.push({ ...effect, startTime: Date.now() });
+    }
+
+    updateStatusEffects(deltaTime) {
+        const now = Date.now();
+        this.statusEffects = this.statusEffects.filter(e => (now - e.startTime) < e.duration * 1000);
+
+        // 範例：處理減速效果
+        const slow = this.statusEffects.find(e => e.type === 'slow');
+        this.currentMoveSpeed = slow ? this.baseMoveSpeed * slow.value : this.baseMoveSpeed;
     }
 
     // 玩家移動
@@ -56,7 +83,6 @@ export class Character {
             const elapsed = (Date.now() - this.waitTimeStart) / 1000;
             if (elapsed >= (target.stay || 0)) {
                 this.isWaiting = false;
-                // 修正：如果不是最後一個點，才增加索引；否則標記為結束
                 if (this.pathIndex < pathArray.length - 1) {
                     this.pathIndex++;
                 } else {
@@ -64,43 +90,54 @@ export class Character {
                 }
             }
 
-            // 停留時套用該節點指定的面向
-            if (customRotationY !== null) {
-                this.model.rotation.y = customRotationY;
+            // 停留時套用該節點指定的「最終絕對面向」
+            if (target.rotation) {
+                this.model.rotation.set(
+                    (target.rotation.x || 0) * (Math.PI / 180),
+                    (target.rotation.y || 0) * (Math.PI / 180),
+                    (target.rotation.z || 0) * (Math.PI / 180)
+                );
             }
 
             this._handlePhysics(null, groundObjects, deltaTime);
             return;
         }
 
-        const targetVec = new THREE.Vector3(target.x, this.model.position.y, target.z);
+        // 使用新的 target.position 結構
+        const targetPos = target.position || { x: 0, y: 0, z: 0 };
+        const targetVec = new THREE.Vector3(targetPos.x, this.model.position.y, targetPos.z);
         const currentVec = this.model.position.clone();
         const direction = new THREE.Vector3().subVectors(targetVec, currentVec);
         const distance = direction.length();
 
         if (distance > 0.1) {
             direction.normalize();
-            const moveStep = Math.min(this.moveSpeed * deltaTime, distance);
+            const moveStep = Math.min(this.currentMoveSpeed * deltaTime, distance);
             this.model.position.add(direction.multiplyScalar(moveStep));
 
-            // 移動中時，一律朝向移動方向，忽略節點的 rotation 設定
-            const targetRotation = Math.atan2(direction.x, direction.z) + Math.PI;
-            this.model.rotation.y = targetRotation;
+            // 移動中時：自動朝向移動方向 (Y軸)
+            const moveRotationY = Math.atan2(direction.x, direction.z) + Math.PI;
+            this.model.rotation.y = moveRotationY;
         } else {
+            // 抵達節點
             if (target.stay > 0) {
                 this.isWaiting = true;
                 this.waitTimeStart = Date.now();
-                // 抵達瞬間套用面向
-                if (customRotationY !== null) {
-                    this.model.rotation.y = customRotationY;
-                }
             } else {
-                // 修正：如果不是最後一個點，才增加索引；否則標記為結束
                 if (this.pathIndex < pathArray.length - 1) {
                     this.pathIndex++;
                 } else {
                     this.isPathFinished = true;
                 }
+            }
+
+            // 抵達瞬間：強制校準為 JSON 指定的「最終絕對面向」 (X, Y, Z)
+            if (target.rotation) {
+                this.model.rotation.set(
+                    (target.rotation.x || 0) * (Math.PI / 180),
+                    (target.rotation.y || 0) * (Math.PI / 180),
+                    (target.rotation.z || 0) * (Math.PI / 180)
+                );
             }
         }
 
@@ -139,10 +176,11 @@ export class Character {
             if (this.keys['s']) moveDir.sub(forward);
             if (this.keys['a']) moveDir.add(right);
             if (this.keys['d']) moveDir.sub(right);
+            if (this.keys[' ']) moveDir.add(new THREE.Vector3(0, 5, 0)); // 空白鍵向上跳躍
 
             if (moveDir.length() > 0) {
                 // 位移 = 速度 * 時間
-                moveDir.normalize().multiplyScalar(this.moveSpeed * deltaTime);
+                moveDir.normalize().multiplyScalar(this.currentMoveSpeed * deltaTime);
                 this.model.position.add(moveDir);
                 const targetRotation = Math.atan2(moveDir.x, moveDir.z) + Math.PI;
                 this.model.rotation.y = targetRotation;
@@ -184,21 +222,28 @@ export class Character {
             }
         }
 
-        // 掉落重生
-        if (this.model.position.y <= 0 && !this.isRespawning) {
-            this.isRespawning = true;
-            setTimeout(() => {
-                this.model.position.set(0, 50, 0);
-                this.model.rotation.set(0, 0, 0);
-                this.velocityY = 0;
-
-                if (this.isPlayer && controls) {
-                    this.camera.position.set(0, 53, 4);
-                    controls.target.copy(this.model.position);
-                    controls.update();
-                }
-                this.isRespawning = false;
-            }, 5000);
+        // 掉落判定：當高度低於 -10 (掉出場外) 且定義了回呼
+        if (this.model.position.y <= 0) {
+            if (typeof this.onFall === 'function') {
+                this.onFall();
+            }
         }
+
+        // // 掉落重生
+        // if (this.model.position.y <= 0 && !this.isRespawning) {
+        //     this.isRespawning = true;
+        //     setTimeout(() => {
+        //         this.model.position.set(0, 50, 0);
+        //         this.model.rotation.set(0, 0, 0);
+        //         this.velocityY = 0;
+
+        //         if (this.isPlayer && controls) {
+        //             this.camera.position.set(0, 53, 4);
+        //             controls.target.copy(this.model.position);
+        //             controls.update();
+        //         }
+        //         this.isRespawning = false;
+        //     }, 3000);
+        // }
     }
 }

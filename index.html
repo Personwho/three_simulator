@@ -8,11 +8,21 @@
 
 <body class="w-full h-full m-0 p-0 overflow-hidden">
 
+
     <div class="w-full absolute top-0 z-50 bg-amber-600">
-        <select id="scene-select" class="w-120 m-2 p-1"></select>
-        <select id="player-select" class="w-40 m-2 p-1"></select> <!-- 新增這行 -->
-        <button id="load-scene" class="m-2 p-1 bg-blue-500 text-white rounded-xl cursor-pointer">載入場景</button>
+        <div>
+            <select id="scene-select" class="w-120 m-2 p-1"></select>
+            <select id="player-select" class="w-40 m-2 p-1"></select>
+            <button id="load-scene" class="m-2 p-1 bg-blue-500 text-white rounded-xl cursor-pointer">載入場景</button>
+            <button id="reset-game" class="m-2 p-1 bg-red-500 text-white rounded-xl cursor-pointer">重置</button>
+            <button id="start-game" class="m-2 p-1 bg-green-500 text-white rounded-xl cursor-pointer">開始</button>
+        </div>
+
+        <div id="coord-display" class="text-white font-mono bg-black/20 px-2 py-1 rounded">
+            X: 0.00, Z: 0.00
+        </div>
     </div>
+
 
     <div id="three-container" class="w-screen h-screen"></div>
 
