@@ -1,0 +1,5 @@
+/node_modules
+/build
+/dist_electron
+.env
+

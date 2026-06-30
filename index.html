@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Three.js</title>
+</head>
+
+<body class="w-full h-full m-0 p-0 overflow-hidden">
+
+    <div class="w-full absolute top-0 z-50 bg-amber-600">
+        <select id="scene-select" class="w-120 m-2 p-1"></select>
+        <select id="player-select" class="w-40 m-2 p-1"></select> <!-- 新增這行 -->
+        <button id="load-scene" class="m-2 p-1 bg-blue-500 text-white rounded-xl cursor-pointer">載入場景</button>
+    </div>
+
+    <div id="three-container" class="w-screen h-screen"></div>
+
+    <script type="module" src="./resources/js/app.js"></script>
+
+</body>
+
+</html>

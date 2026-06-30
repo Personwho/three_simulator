@@ -1,0 +1,51 @@
+{
+    "name": "ff14-threejs-app",
+    "version": "1.0.0",
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "description": "My Three.js Project",
+    "main": "main.cjs",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite",
+        "preview": "vite preview",
+        "estart": "electron .",
+        "ebuild": "vite build && electron-builder"
+    },
+    "build": {
+        "appId": "com.ff14.app",
+        "directories": {
+            "output": "dist_electron"
+        },
+        "files": [
+            "build/**/*",
+            "main.cjs",
+            "package.json"
+        ],
+        "win": {
+            "target": "portable"
+        }
+    },
+    "dependencies": {
+        "@tailwindcss/forms": "^0.5.11",
+        "@tailwindcss/typography": "^0.5.19",
+        "@tailwindcss/vite": "^4.1.11",
+        "dotenv": "^17.4.2",
+        "gsap": "^3.15.0",
+        "jquery": "^4.0.0",
+        "lil-gui": "^0.21.0",
+        "moment": "^2.30.1",
+        "tailwindcss": "^4.0.7",
+        "three": "^0.185.0",
+        "vite": "^7.0.4"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": "4.9.5",
+        "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
+        "lightningcss-linux-x64-gnu": "^1.29.1"
+    },
+    "devDependencies": {
+        "electron": "^42.5.0",
+        "electron-builder": "^26.15.3"
+    }
+}

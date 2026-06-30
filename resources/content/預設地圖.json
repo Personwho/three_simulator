@@ -1,0 +1,128 @@
+{
+    "floor": [
+        {
+            "type": "Box",
+            "size": {
+                "width": 5,
+                "height": 10,
+                "depth": 5
+            },
+            "color": "0xff00ff",
+            "positions": [
+                {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                {
+                    "x": 5,
+                    "y": 0,
+                    "z": 5
+                }
+            ]
+        },
+        {
+            "type": "Box",
+            "size": {
+                "width": 5,
+                "height": 10,
+                "depth": 5
+            },
+            "color": "0xffff00",
+            "positions": [
+                {
+                    "x": 0,
+                    "y": 0,
+                    "z": 5
+                },
+                {
+                    "x": 5,
+                    "y": 0,
+                    "z": 0
+                }
+            ]
+        }
+    ],
+    "player": [
+        {
+            "name": "MT",
+            "model": "../models/Lalafell.glb",
+            "scale": 0.3,
+            "default_position": {
+                "x": 0,
+                "y": 10,
+                "z": 0
+            },
+            "path": [
+                {
+                    "x": 0,
+                    "y": 10,
+                    "z": 3,
+                    "stay": 1,
+                    "rotation": null
+                },
+                {
+                    "x": 3,
+                    "y": 10,
+                    "z": 3,
+                    "stay": 5,
+                    "rotation": null
+                },
+                {
+                    "x": 3,
+                    "y": 10,
+                    "z": 0,
+                    "stay": 0,
+                    "rotation": null
+                },
+                {
+                    "x": 0,
+                    "y": 10,
+                    "z": 0,
+                    "stay": 2,
+                    "rotation": null
+                }
+            ]
+        },
+        {
+            "name": "ST",
+            "model": "../models/Lalafell.glb",
+            "scale": 0.3,
+            "default_position": {
+                "x": 0,
+                "y": 10,
+                "z": 0
+            },
+            "path": [
+                {
+                    "x": 3,
+                    "y": 10,
+                    "z": 0,
+                    "stay": 2,
+                    "rotation": 0
+                },
+                {
+                    "x": 3,
+                    "y": 10,
+                    "z": 3,
+                    "stay": 0,
+                    "rotation": 90
+                },
+                {
+                    "x": 0,
+                    "y": 10,
+                    "z": 3,
+                    "stay": 5,
+                    "rotation": 180
+                },
+                {
+                    "x": 0,
+                    "y": 10,
+                    "z": 0,
+                    "stay": 1,
+                    "rotation": 270
+                }
+            ]
+        }
+    ]
+}
