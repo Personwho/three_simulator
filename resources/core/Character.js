@@ -23,7 +23,7 @@ export class Character {
 
         this.role = config.role; // T, H, D
         this.team = config.team; // A, B, C
-        this.statusEffects = []; // { name, type, duration, value }
+        this.statusEffects = []; // { name, type, duration, value, isBuff, icon }
         this.baseMoveSpeed = config.moveSpeed || 1;
         this.currentMoveSpeed = this.baseMoveSpeed;
 
@@ -37,23 +37,43 @@ export class Character {
     }
 
     addStatusEffect(effect) {
+        // 尋找是否已有同名狀態
+        const existing = this.statusEffects.find(e => e.name === effect.name);
+
+        if (existing) {
+            // 如果已存在，僅更新開始時間（重新計時），不新增物件
+            existing.startTime = Date.now();
+            existing.duration = effect.duration; // 確保持續時間同步
+            return;
+        }
+
+        // 不存在才新增
         this.statusEffects.push({ ...effect, startTime: Date.now() });
     }
 
-    updateStatusEffects(deltaTime) {
+    updateStatusEffects() {
         const now = Date.now();
+        // 過濾掉時間已到的狀態
         this.statusEffects = this.statusEffects.filter(e => (now - e.startTime) < e.duration * 1000);
 
-        // 範例：處理減速效果
-        const slow = this.statusEffects.find(e => e.type === 'slow');
-        this.currentMoveSpeed = slow ? this.baseMoveSpeed * slow.value : this.baseMoveSpeed;
+        let buffMultiplier = 1.0;
+        this.statusEffects.filter(e => e.isBuff && e.type === 'speed').forEach(e => {
+            buffMultiplier += (e.value - 1);
+        });
+
+        let debuffMultiplier = 1.0;
+        const slowEffects = this.statusEffects.filter(e => !e.isBuff && e.type === 'slow');
+        if (slowEffects.length > 0) {
+            debuffMultiplier = Math.min(...slowEffects.map(e => e.value));
+        }
+
+        this.currentMoveSpeed = this.baseMoveSpeed * buffMultiplier * debuffMultiplier;
     }
 
     // 玩家移動
     moveByPlayer(controls, groundObjects, deltaTime) {
         if (!this.isPlayer || this.isRespawning) return;
         this._applyPhysicsAndInput(controls, groundObjects, deltaTime);
-        console.log(`Player Position: (${this.model.position.x.toFixed(2)}, ${this.model.position.y.toFixed(2)}, ${this.model.position.z.toFixed(2)})`);
     }
 
     // NPC 路徑移動

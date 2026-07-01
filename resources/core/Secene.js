@@ -6,6 +6,7 @@ import { Floor } from './Floor';
 import { TelegraphManager } from './TelegraphManager';
 import { Monster } from './Monster';
 import { Tool } from './Tool';
+import { ActionBar } from './ActionBar';
 
 class SceneManager {
     constructor() {
@@ -24,6 +25,10 @@ class SceneManager {
         this.gameStartTime = 0;
         this.previousTime = 0;
         this.sceneData = null;
+        this.lastStatusUIUpdate = 0; // 新增：上次 UI 更新時間
+        this.lastStatusFingerprint = ""; // 新增：狀態清單指紋
+        this.actionBar = new ActionBar();
+        this.interactionRaycaster = new THREE.Raycaster(); // 提升到成員變數複用
     }
 
     async init(containerId, { floor, players, monsters }, selectedPlayerName) {
@@ -34,6 +39,12 @@ class SceneManager {
             monsters: Tool.processData('monsters', monsters)
         };
         const container = document.getElementById(containerId);
+
+        this.lastStatusFingerprint = "";
+        this.actionBar.reset();
+
+        const lists = document.querySelectorAll('#status-effects-container .status-list');
+        lists.forEach(list => list.innerHTML = '');
 
         if (this.renderer) {
             cancelAnimationFrame(this.animationId);
@@ -61,6 +72,32 @@ class SceneManager {
     }
 
     async _setupObjects(selectedPlayerName) {
+        // 1. 建立資源池容器 (如果不存在)
+        let pool = document.getElementById('status-icon-pool');
+        if (!pool) {
+            pool = document.createElement('div');
+            pool.id = 'status-icon-pool';
+            pool.style.display = 'none'; // 隱藏但不移除 DOM
+            document.body.appendChild(pool);
+        }
+        pool.innerHTML = ''; // 清空舊的
+
+        // 2. 收集所有可能的狀態定義 (衝刺 + 怪物技能)
+        const statusConfigs = [{ name: '衝刺', icon: 'assets/icons/衝刺.png' }];
+        this.sceneData.monsters.forEach(m => {
+            m.skills.forEach(s => {
+                if (s.debuff) statusConfigs.push({ name: s.debuff.name, icon: s.debuff.icon });
+            });
+        });
+
+        // 3. 預先建立 img 標籤並放入池中，強制瀏覽器載入並解碼
+        statusConfigs.forEach(cfg => {
+            const img = new Image();
+            img.dataset.statusName = cfg.name;
+            img.src = cfg.icon;
+            pool.appendChild(img);
+        });
+
         this.groundObjects = [];
         this.characters = [];
         this.monsterInstances = [];
@@ -138,25 +175,46 @@ class SceneManager {
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(container.clientWidth, container.clientHeight);
         });
+        window.addEventListener('keydown', (e) => {
+            if (this.controlledCharacter) {
+                this.actionBar.trigger(e.key, this.controlledCharacter);
+            }
+        });
     }
 
     _handleAttack = (skill, pos) => {
         this.characters.forEach(char => {
-            const dist = char.model.position.distanceTo(new THREE.Vector3(pos.x, char.model.position.y, pos.z));
+            // 只計算 XZ 平面的距離，避免高度差導致無法判定命中
+            const charPos = new THREE.Vector2(char.model.position.x, char.model.position.z);
+            const attackPos = new THREE.Vector2(pos.x, pos.z);
+            const dist = charPos.distanceTo(attackPos);
+
             if (dist <= skill.attack_range.radius) {
-                if (skill.debuff) char.addStatusEffect({ ...skill.debuff, type: 'slow', value: 0.5 });
+                if (skill.debuff) {
+                    char.addStatusEffect({
+                        ...skill.debuff,
+                        startTime: Date.now()
+                    });
+                }
             }
         });
     }
 
     start() {
         if (this.isGameRunning) return;
+
+        // 開始前再次確保所有狀態與技能重置
+        this.characters.forEach(char => char.statusEffects = []);
+        this.actionBar.reset();
+        this.lastStatusFingerprint = ""; // 重置指紋，強制 UI 刷新
+
         this.isGameRunning = true;
         this.gameStartTime = Date.now();
     }
 
     reset(selectedPlayerName = null) {
         this.isGameRunning = false;
+        this.lastStatusFingerprint = ""; // 確保 UI 指紋在重置時被清空
 
         this.characters.forEach(char => {
             // 清除該角色的按鍵緩存，防止切換時角色自動亂跑
@@ -187,7 +245,17 @@ class SceneManager {
             char.isPathFinished = false;
             char.statusEffects = [];
             char.velocityY = 0; // 重置重力速度
+            char.statusEffects = []; // 清空 Buff/Debuff 陣列
+            char.velocityY = 0;
         });
+
+        // 重置技能組冷卻
+        this.actionBar.reset();
+
+        // 立即清空狀態 UI 容器
+        const lists = document.querySelectorAll('#status-effects-container .status-list');
+        lists.forEach(list => list.innerHTML = '');
+
         if (this.controlledCharacter && this.controls) {
             const p = this.controlledCharacter.model.position;
             this.camera.position.set(p.x, p.y + 0.5, p.z - 1);
@@ -212,13 +280,14 @@ class SceneManager {
 
         const activeGround = this.groundObjects.filter(f => !f.userData.isDisappeared);
 
+        this.characters.forEach(char => char.updateStatusEffects());
+
         if (this.isGameRunning) {
             const elapsed = (Date.now() - this.gameStartTime) / 1000;
             this._checkInteractions(dt, activeGround);
             this.telegraphManager.update();
             this.monsterInstances.forEach(m => m.update(elapsed, true, this.telegraphManager, this._handleAttack));
             this.characters.forEach(char => {
-                char.updateStatusEffects(dt);
                 if (!char.isPlayer) char.moveByPath(char.pathData, this.groundObjects, dt);
             });
         } else {
@@ -229,6 +298,8 @@ class SceneManager {
             const oldPos = this.controlledCharacter.model.position.clone();
             this.controlledCharacter.moveByPlayer(this.controls, activeGround, dt);
             this._updateUI(this.controlledCharacter.model.position);
+            this.actionBar.update(); // 更新 CD 顯示
+            this._updateStatusUI(this.controlledCharacter.statusEffects);
             const delta = this.controlledCharacter.model.position.clone().sub(oldPos);
             if (delta.length() > 10) {
                 const p = this.controlledCharacter.config.default_position;
@@ -243,11 +314,78 @@ class SceneManager {
         this.renderer.render(this.scene, this.camera);
     }
 
+    _updateStatusUI(effects) {
+        const now = Date.now();
+
+        if (now - this.lastStatusUIUpdate < 100) return;
+        this.lastStatusUIUpdate = now;
+
+        const container = document.getElementById('status-effects-container');
+        if (!container) return;
+
+        const currentFingerprint = (effects || []).map(e => {
+            const remain = Math.max(0, Math.ceil(e.duration - (now - e.startTime) / 1000));
+            return `${e.name}_${remain}`;
+        }).join('|');
+
+        if (this.lastStatusFingerprint === currentFingerprint) return;
+        this.lastStatusFingerprint = currentFingerprint;
+
+        // 修改：直接傳入 Element 而非 Selector 字符串
+        const updateGroup = (selector, list) => {
+            const listContainer = container.querySelector(`${selector} .status-list`);
+            if (!listContainer) return;
+
+            if (list.length === 0) {
+                listContainer.innerHTML = '';
+                return;
+            }
+
+            const currentIds = new Set();
+            list.forEach(e => {
+                const id = `status-${e.name.replace(/\s+/g, '')}-${e.startTime}`;
+                currentIds.add(id);
+                const remain = Math.max(0, Math.ceil(e.duration - (Date.now() - e.startTime) / 1000));
+
+                let el = document.getElementById(id);
+                if (!el) {
+                    const poolImg = document.querySelector(`#status-icon-pool img[data-status-name="${e.name}"]`);
+                    const imgHtml = poolImg ? `<img src="${poolImg.src}" class="w-6 h-6 object-contain">` : '';
+
+                    const statusItem = document.createElement('div');
+                    statusItem.id = id;
+                    statusItem.className = "flex items-center bg-black/60 text-white rounded p-1 border border-white/20";
+                    statusItem.innerHTML = `
+                        ${imgHtml}
+                        <span class="timer text-[10px] ml-1 text-yellow-400">${remain}s</span>
+                    `;
+                    listContainer.appendChild(statusItem);
+                } else {
+                    const timer = el.querySelector('.timer');
+                    if (timer && timer.textContent !== `${remain}s`) {
+                        timer.textContent = `${remain}s`;
+                    }
+                }
+            });
+
+            Array.from(listContainer.children).forEach(child => {
+                if (!currentIds.has(child.id)) child.remove();
+            });
+        };
+
+        updateGroup('.buff-group', effects.filter(e => e.isBuff));
+        updateGroup('.debuff-group', effects.filter(e => !e.isBuff));
+    }
+
     _checkInteractions(dt, activeGround) {
         this.groundObjects.forEach(f => f.userData.activePlayers.clear());
         this.characters.forEach(char => {
-            const ray = new THREE.Raycaster(char.model.position.clone().add(new THREE.Vector3(0, 1, 0)), new THREE.Vector3(0, -1, 0));
-            const hit = ray.intersectObjects(activeGround);
+            // 修正：使用成員變數而非 new
+            this.interactionRaycaster.set(
+                char.model.position.clone().add(new THREE.Vector3(0, 1, 0)),
+                new THREE.Vector3(0, -1, 0)
+            );
+            const hit = this.interactionRaycaster.intersectObjects(activeGround);
             if (hit.length > 0) hit[0].object.userData.activePlayers.add(char.name);
         });
         this.groundObjects.forEach(f => Floor.updateMechanics(f, dt));
