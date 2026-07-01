@@ -17,12 +17,9 @@ export class Character {
         this.raycaster = new THREE.Raycaster();
         this.downVector = new THREE.Vector3(0, -1, 0);
 
-        if (this.isPlayer) {
-            window.addEventListener('keydown', (e) => { this.keys[e.key.toLowerCase()] = true; });
-            window.addEventListener('keyup', (e) => { this.keys[e.key.toLowerCase()] = false; });
-            // 避免視窗失去焦點後按鍵狀態卡住
-            window.addEventListener('blur', () => { this.keys = {}; });
-        }
+        window.addEventListener('keydown', (e) => { this.keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', (e) => { this.keys[e.key.toLowerCase()] = false; });
+        window.addEventListener('blur', () => { this.keys = {}; });
 
         this.role = config.role; // T, H, D
         this.team = config.team; // A, B, C
@@ -160,34 +157,37 @@ export class Character {
             isOnAnyGround = true;
         }
 
-        // 只有在地面上才允許 WASD 移動
-        const canMove = isOnAnyGround && this.model.position.y >= currentGroundY - 0.1;
+        // 判斷是否在地面上 (容許誤差 0.1)
+        const canJump = isOnAnyGround && Math.abs(this.model.position.y - currentGroundY) < 0.1;
 
-        if (canMove) {
-            const forward = new THREE.Vector3();
-            this.camera.getWorldDirection(forward);
-            forward.y = 0;
-            forward.normalize();
+        // 處理平面移動 (WASD)
+        const forward = new THREE.Vector3();
+        this.camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
 
-            const right = new THREE.Vector3().crossVectors(this.camera.up, forward).normalize();
-            const moveDir = new THREE.Vector3(0, 0, 0);
+        const right = new THREE.Vector3().crossVectors(this.camera.up, forward).normalize();
+        const moveDir = new THREE.Vector3(0, 0, 0);
 
-            if (this.keys['w']) moveDir.add(forward);
-            if (this.keys['s']) moveDir.sub(forward);
-            if (this.keys['a']) moveDir.add(right);
-            if (this.keys['d']) moveDir.sub(right);
-            if (this.keys[' ']) moveDir.add(new THREE.Vector3(0, 5, 0)); // 空白鍵向上跳躍
+        if (this.keys['w']) moveDir.add(forward);
+        if (this.keys['s']) moveDir.sub(forward);
+        if (this.keys['a']) moveDir.add(right);
+        if (this.keys['d']) moveDir.sub(right);
 
-            if (moveDir.length() > 0) {
-                // 位移 = 速度 * 時間
-                moveDir.normalize().multiplyScalar(this.currentMoveSpeed * deltaTime);
-                this.model.position.add(moveDir);
-                const targetRotation = Math.atan2(moveDir.x, moveDir.z) + Math.PI;
-                this.model.rotation.y = targetRotation;
-            }
+        // 如果有按移動鍵，處理水平位移與旋轉
+        if (moveDir.length() > 0) {
+            moveDir.normalize().multiplyScalar(this.currentMoveSpeed * deltaTime);
+            this.model.position.add(moveDir);
+            const targetRotation = Math.atan2(moveDir.x, moveDir.z) + Math.PI;
+            this.model.rotation.y = targetRotation;
         }
 
-        // 2. 套用重力與碰撞修正
+        // 處理跳躍 (Space): 只有在地面上才允許跳躍
+        if (this.keys[' '] && canJump) {
+            this.velocityY = 3.0; // 給予垂直向上的初速度，數值可依手感調整
+        }
+
+        // 2. 套用重力與碰撞修正 (原本的 _handlePhysics 會處理上升與下降)
         this._handlePhysics(controls, groundObjects, deltaTime);
     }
 

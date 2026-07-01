@@ -1,0 +1,43 @@
+[
+    {
+        "name": "Boss",
+        "model": "../models/Lalafell.glb",
+        "scale": 1.0,
+        "spawn_time": 0,
+        "position": {
+            "x": 0,
+            "y": 10,
+            "z": -8
+        },
+        "rotation": {
+            "x": 0,
+            "y": 180,
+            "z": 0
+        },
+        "skills": [
+            {
+                "name": "大型爆破",
+                "time": 5,
+                "cast_time": 3,
+                "position": {
+                    "x": 0,
+                    "y": 10,
+                    "z": 0
+                },
+                "telegraph": {
+                    "type": "circle",
+                    "radius": 5
+                },
+                "attack_range": {
+                    "type": "circle",
+                    "radius": 5
+                },
+                "damage": 500,
+                "debuff": {
+                    "name": "受傷加重",
+                    "duration": 10
+                }
+            }
+        ]
+    }
+]

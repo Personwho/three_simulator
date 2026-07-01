@@ -9,30 +9,60 @@ window.jQuery = $;
 import moment from 'moment';
 window.moment = moment;
 
-let currentSceneData = null;
-const modules = import.meta.glob('../content/*.json');
+let currentSceneData = { floor: null, players: null, monsters: null };
+
+// 抓取 content 下所有子資料夾中的 .json 檔案
+const jsonModules = import.meta.glob('../content/**/*.json');
+
+// 從路徑中解析出所有的關卡（資料夾名稱）
+async function getScenes() {
+    const scenes = new Set();
+    for (const path in jsonModules) {
+        // 路徑格式範例: ../content/預設地圖/floor.json
+        const parts = path.split('/');
+        if (parts.length >= 4) {
+            scenes.add(parts[2]); // 取得 "預設地圖"
+        }
+    }
+    return Array.from(scenes);
+}
+
+// 根據資料夾名稱載入該關卡的所有 JSON
+async function loadSceneData(sceneName) {
+    const basePath = `../content/${sceneName}`;
+    const [floor, player, monster] = await Promise.all([
+        jsonModules[`${basePath}/floor.json`](),
+        jsonModules[`${basePath}/player.json`](),
+        jsonModules[`${basePath}/monster.json`]()
+    ]);
+
+    return {
+        floor: floor.default,
+        players: player.default,
+        monsters: monster.default
+    };
+}
 
 async function populateSceneSelect() {
     const sceneSelect = document.getElementById('scene-select');
-    sceneSelect.innerHTML = '<option value="">請選擇地圖</option>';
-    for (const path in modules) {
-        const fileName = path.split('/').pop().replace('.json', '');
+    const scenes = await getScenes();
+
+    sceneSelect.innerHTML = '<option value="">請選擇關卡</option>';
+    scenes.forEach(scene => {
         const option = document.createElement('option');
-        option.value = path;
-        option.textContent = fileName;
+        option.value = scene;
+        option.textContent = scene;
         sceneSelect.appendChild(option);
-    }
+    });
 }
 
 // 抽取更新玩家選單的邏輯
 function updatePlayerSelect(data) {
     const playerSelect = document.getElementById('player-select');
     playerSelect.innerHTML = '';
-
-    // 遍歷 teams (A, B, C) 下的所有玩家
-    if (data.teams) {
-        Object.keys(data.teams).forEach(teamName => {
-            data.teams[teamName].players.forEach(p => {
+    if (data.players) {
+        Object.keys(data.players).forEach(teamName => {
+            data.players[teamName].players.forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.name;
                 option.textContent = `[Team ${teamName}] ${p.name} (${p.role})`;
@@ -44,68 +74,58 @@ function updatePlayerSelect(data) {
 
 // 當場景選單改變時
 document.getElementById('scene-select').addEventListener('change', async (e) => {
-    const path = e.target.value;
-    if (!path) return;
-    const module = await modules[path]();
-    currentSceneData = module.default;
+    const sceneName = e.target.value;
+    if (!sceneName) return;
+    currentSceneData = await loadSceneData(sceneName);
     updatePlayerSelect(currentSceneData);
 });
 
 // 載入場景按鈕
-document.getElementById('load-scene').addEventListener('click', () => {
+document.getElementById('load-scene').addEventListener('click', async () => {
     const selectedPlayer = document.getElementById('player-select').value;
-    if (currentSceneData) {
-        import('../scenes/default.js').then(m => {
-            m.createScene('three-container', currentSceneData, selectedPlayer);
-        });
-    }
+    if (!currentSceneData.floor) return;
+    const { createScene } = await import('../core/Secene.js');
+    createScene('three-container', currentSceneData, selectedPlayer);
 });
 
 // 開始按鈕
 document.getElementById('start-game').addEventListener('click', () => {
-    import('../scenes/default.js').then(m => m.startGame());
+    import('../core/Secene.js').then(m => m.startGame());
 });
 
 // 重置按鈕
 document.getElementById('reset-game').addEventListener('click', () => {
-    import('../scenes/default.js').then(m => m.resetGame());
+    const selectedPlayer = document.getElementById('player-select').value;
+    import('../core/Secene.js').then(m => m.resetGame(selectedPlayer));
 });
 
 // 初始化預設場景
 async function initDefaultScene() {
     await populateSceneSelect();
+    const sceneSelect = document.getElementById('scene-select');
 
-    // 預設路徑 (相對於此檔案)
-    const defaultPath = '../content/預設地圖.json';
-
-    if (modules[defaultPath]) {
-        // 1. 設定選單顯示為預設地圖
-        document.getElementById('scene-select').value = defaultPath;
-
-        // 2. 獲取 JSON 內容
-        const module = await modules[defaultPath]();
-        currentSceneData = module.default;
-
-        // 3. 更新玩家選單並選取第一個玩家
+    // 如果有預設關卡則自動選取第一個
+    if (sceneSelect.options.length > 1) {
+        sceneSelect.selectedIndex = 1;
+        const sceneName = sceneSelect.value;
+        currentSceneData = await loadSceneData(sceneName);
         updatePlayerSelect(currentSceneData);
 
-        // 從 teams 中尋找第一個玩家
         let firstPlayerName = '';
-        if (currentSceneData.teams) {
-            const firstTeamKey = Object.keys(currentSceneData.teams)[0];
-            if (firstTeamKey && currentSceneData.teams[firstTeamKey].players.length > 0) {
-                firstPlayerName = currentSceneData.teams[firstTeamKey].players[0].name;
-            }
+        if (currentSceneData.players) {
+            const firstTeamKey = Object.keys(currentSceneData.players)[0];
+            firstPlayerName = currentSceneData.players[firstTeamKey].players[0]?.name;
         }
 
         if (firstPlayerName) {
             document.getElementById('player-select').value = firstPlayerName;
+            const { createScene } = await import('../core/Secene.js');
+            createScene('three-container', currentSceneData, firstPlayerName);
         }
-
-        // 4. 執行載入場景
-        const { createScene } = await import('../scenes/default.js');
-        createScene('three-container', currentSceneData, firstPlayerName);
     }
 }
 
 initDefaultScene();
+
+// 禁止全域右鍵選單
+window.addEventListener('contextmenu', (e) => e.preventDefault());

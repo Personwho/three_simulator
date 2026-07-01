@@ -1,0 +1,136 @@
+{
+    "A": {
+        "players": [
+            {
+                "name": "MT",
+                "model": "../models/Lalafell.glb",
+                "role": "T",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 0,
+                    "y": 10,
+                    "z": 0
+                },
+                "path": [
+                    {
+                        "position": {
+                            "x": 0,
+                            "y": 10,
+                            "z": 3
+                        },
+                        "stay": 1,
+                        "rotation": {
+                            "x": 0,
+                            "y": 0,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 3,
+                            "y": 10,
+                            "z": 3
+                        },
+                        "stay": 5,
+                        "rotation": {
+                            "x": 0,
+                            "y": 90,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 3,
+                            "y": 10,
+                            "z": 0
+                        },
+                        "stay": 0,
+                        "rotation": {
+                            "x": 0,
+                            "y": 180,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 0,
+                            "y": 10,
+                            "z": 0
+                        },
+                        "stay": 2,
+                        "rotation": {
+                            "x": 0,
+                            "y": 270,
+                            "z": 0
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "H1",
+                "model": "../models/Lalafell.glb",
+                "role": "H",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 0,
+                    "y": 10,
+                    "z": 0
+                },
+                "path": [
+                    {
+                        "position": {
+                            "x": 3,
+                            "y": 10,
+                            "z": 0
+                        },
+                        "stay": 5,
+                        "rotation": {
+                            "x": 0,
+                            "y": 90,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 3,
+                            "y": 10,
+                            "z": 3
+                        },
+                        "stay": 5,
+                        "rotation": {
+                            "x": 0,
+                            "y": 90,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 0,
+                            "y": 10,
+                            "z": 3
+                        },
+                        "stay": 5,
+                        "rotation": {
+                            "x": 0,
+                            "y": 90,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 0,
+                            "y": 10,
+                            "z": 0
+                        },
+                        "stay": 5,
+                        "rotation": {
+                            "x": 0,
+                            "y": 90,
+                            "z": 0
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}
