@@ -70,11 +70,11 @@
                 "cast_time": 3,
                 "config": {
                     "position": {
-                        "x": 3,
+                        "x": 0,
                         "y": 10,
                         "z": 0
                     },
-                    "radius": 5,
+                    "radius": 2,
                     "debuff": {
                         "name": "加重",
                         "type": "slow",

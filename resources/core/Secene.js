@@ -88,9 +88,15 @@ class SceneManager {
         // 2. 收集所有可能的狀態定義 (衝刺 + 怪物技能)
         const statusConfigs = [{ name: '衝刺', icon: 'assets/icons/衝刺.png' }];
         this.sceneData.monsters.forEach(m => {
-            m.skills.forEach(s => {
-                if (s.debuff) statusConfigs.push({ name: s.debuff.name, icon: s.debuff.icon });
-            });
+            if (m.skills) {
+                m.skills.forEach(s => {
+                    // 注意這裡的路徑：s 是原始 JSON 定義，debuff 在 config 裡面
+                    const debuff = s.config?.debuff;
+                    if (debuff && debuff.name && debuff.icon) {
+                        statusConfigs.push({ name: debuff.name, icon: debuff.icon });
+                    }
+                });
+            }
         });
 
         // 3. 預先建立 img 標籤並放入池中，強制瀏覽器載入並解碼
@@ -187,17 +193,30 @@ class SceneManager {
     }
 
     _handleAttack = (skillData, pos) => {
+        // 1. 取得技能定義資料
+        const data = skillData.data || skillData;
+
+        // 2. 優先使用現有的 logic 實例，若無則建立 (相容 Player 技能)
+        const logic = skillData.logic || SkillFactory.create(data);
+
+        if (!logic || !data.type) {
+            console.warn('Invalid skill or logic:', skillData);
+            return;
+        }
+
         this.characters.forEach(char => {
             const charPos = char.model.position;
-            // 邏輯封裝：直接呼叫該技能類別實例的判定方法
-            const logic = SkillFactory.create(skillData);
-            if (logic && logic.checkHit(charPos, pos)) {
-                const config = skillData.config;
-                if (config.debuff) {
+
+            // 3. 執行命中判定
+            if (logic.checkHit(charPos, pos)) {
+                // 4. 取得 debuff 配置 (路徑：data.config.debuff)
+                const config = data.config;
+                if (config && config.debuff) {
                     char.addStatusEffect({
                         ...config.debuff,
                         startTime: Date.now()
                     });
+                    console.log(`命中！玩家 ${char.name} 獲得狀態: ${config.debuff.name}`);
                 }
             }
         });
