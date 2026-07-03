@@ -20,6 +20,9 @@ export class Monster {
         // 初始化位置
         this.model.position.set(config.position.x, config.position.y, config.position.z);
 
+        // 新增：初始化腳下目標圈
+        this._setupTargetRing(config.hitbox_radius || 1);
+
         // 設定旋轉 (支援 JSON 中的 rotation 物件，角度轉弧度)
         if (config.rotation) {
             this.model.rotation.set(
@@ -32,6 +35,52 @@ export class Monster {
         // 預設可見性：如果 spawn_time 為 0 或未定義，則一開始就顯示
         this.spawned = (config.spawn_time || 0) <= 0;
         this.model.visible = this.spawned;
+    }
+
+    _setupTargetRing(outerRadius) {
+        const innerRadius = outerRadius - 0.1;
+        const ringGroup = new THREE.Group();
+        ringGroup.position.y = 0.01;
+
+        const createRing = (radius, thetaStart, thetaLength) => {
+            const geometry = new THREE.RingGeometry(
+                radius - 0.01,
+                radius + 0.01,
+                64, 1,
+                thetaStart,
+                thetaLength
+            );
+            const material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.rotation.x = Math.PI / 2;
+            return mesh;
+        };
+
+        const outerRing = createRing(outerRadius, (Math.PI * 3) / 4, Math.PI * 1.5);
+        const innerRing = createRing(innerRadius, (Math.PI * 145) / 180, (Math.PI * 250) / 180);
+
+        // 建立小三角形箭頭
+        const arrowSize = 0.2;
+        const arrowShape = new THREE.Shape();
+        arrowShape.moveTo(0, arrowSize);
+        arrowShape.lineTo(-arrowSize / 1.5, -arrowSize);
+        arrowShape.lineTo(arrowSize / 1.5, -arrowSize);
+        arrowShape.lineTo(0, arrowSize);
+
+        const arrowGeom = new THREE.ShapeGeometry(arrowShape);
+        const arrowMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const arrowHead = new THREE.Mesh(arrowGeom, arrowMat);
+
+        // 修正：將箭頭位置移動到 -Z 方向，並旋轉指向 -Z
+        arrowHead.rotation.x = -Math.PI / 2;
+        arrowHead.position.z = -outerRadius; // 從 +outerRadius 改為 -outerRadius
+        arrowHead.rotation.z = Math.PI * 2;      // 旋轉 180 度讓尖端指向前方 (-Z)
+
+        ringGroup.add(outerRing);
+        ringGroup.add(innerRing);
+        ringGroup.add(arrowHead);
+
+        this.model.add(ringGroup);
     }
 
     update(elapsedTime, isGameRunning, telegraphManager, onAttack) {
@@ -104,10 +153,27 @@ export class Monster {
     reset() {
         this.spawned = (this.config.spawn_time || 0) <= 0;
         this.model.visible = this.spawned;
-        this.skills.forEach(s => s.triggered = false);
+        this.model.position.set(this.config.position.x, this.config.position.y, this.config.position.z);
+
+        // 新增：重置旋轉面向
+        if (this.config.rotation) {
+            this.model.rotation.set(
+                (this.config.rotation.x || 0) * (Math.PI / 180),
+                (this.config.rotation.y || 0) * (Math.PI / 180),
+                (this.config.rotation.z || 0) * (Math.PI / 180)
+            );
+        } else {
+            this.model.rotation.set(0, 0, 0);
+        }
+
+        // 修正：重置正確的移動狀態變數名稱
         this.currentPathIndex = -1;
         this.isMoving = false;
-        this.activeCast = null;
-        this.model.position.set(this.config.position.x, this.config.position.y, this.config.position.z);
+        this.moveStartTime = 0;
+
+        // 修正：必須重置技能的觸發狀態，否則第二次開始技能不會放
+        this.skills.forEach(skill => {
+            skill.triggered = false;
+        });
     }
 }
