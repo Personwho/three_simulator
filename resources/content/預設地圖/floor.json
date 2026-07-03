@@ -7,16 +7,31 @@
             "depth": 5
         },
         "color": "0xff00ff",
-        "positions": [
+        "instances": [
             {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "color": "0x00ffff"
             },
             {
-                "x": 5,
-                "y": 0,
-                "z": 5
+                "position": {
+                    "x": 5,
+                    "y": 0,
+                    "z": 5
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                }
             }
         ],
         "mechanics": {
@@ -33,22 +48,76 @@
             "depth": 5
         },
         "color": "0xffff00",
-        "positions": [
+        "instances": [
             {
-                "x": 0,
-                "y": 0,
-                "z": 5
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 5
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                }
             },
             {
-                "x": 5,
-                "y": 0,
-                "z": 0
+                "position": {
+                    "x": 5,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                }
             }
         ],
         "mechanics": {
             "max_players": 2,
             "time_limit": 20,
             "warning_color": "0xff0000"
+        }
+    },
+    {
+        "type": "Box",
+        "size": {
+            "width": 1,
+            "height": 0.6,
+            "depth": 1
+        },
+        "color": "0xffff00",
+        "instances": [
+            {
+                "position": {
+                    "x": 3,
+                    "y": 10,
+                    "z": 3
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                }
+            },
+            {
+                "position": {
+                    "x": 1.3,
+                    "y": 10,
+                    "z": 3
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                }
+            }
+        ],
+        "mechanics": {
+            "max_players": null,
+            "time_limit": null,
+            "warning_color": "0xffff00"
         }
     }
 ]

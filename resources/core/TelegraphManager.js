@@ -7,31 +7,17 @@ export class TelegraphManager {
     }
 
     // 建立預警區
-    createTelegraph(skill, position, onComplete) {
-        let geometry;
-        if (skill.telegraph.type === 'circle') {
-            geometry = new THREE.CircleGeometry(skill.telegraph.radius, 32);
-        }
-
-        const material = new THREE.MeshBasicMaterial({
-            color: 0xffa500, // 橘黃色
-            transparent: true,
-            opacity: 0.5,
-            side: THREE.DoubleSide
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.rotation.x = -Math.PI / 2; // 水平放置
+    createTelegraph(skillInstance, position, onComplete) {
+        const mesh = skillInstance.logic.createTelegraphMesh();
         mesh.position.set(position.x, position.y + 0.05, position.z);
         this.scene.add(mesh);
 
-        const startTime = Date.now();
         this.activeTelegraphs.push({
             mesh,
-            skill,
+            skillInstance, // 存入實例
             position,
-            startTime,
-            duration: skill.cast_time * 1000,
+            startTime: Date.now(),
+            duration: skillInstance.data.cast_time * 1000,
             onComplete
         });
     }
@@ -41,7 +27,7 @@ export class TelegraphManager {
         this.activeTelegraphs = this.activeTelegraphs.filter(t => {
             if (now - t.startTime >= t.duration) {
                 this.scene.remove(t.mesh);
-                if (t.onComplete) t.onComplete(t.skill, t.position); // 觸發攻擊判定
+                if (t.onComplete) t.onComplete(t.skillInstance.data, t.position);
                 return false;
             }
             return true;

@@ -1,11 +1,21 @@
 import * as THREE from 'three';
+import { SkillFactory } from './skills/SkillFactory.js';
 
 export class Monster {
     constructor(model, config) {
         this.model = model;
         this.config = config;
-        this.name = config.name;
-        this.skills = config.skills.map(s => ({ ...s, triggered: false }));
+        this.skills = config.skills.map(s => ({
+            data: s,
+            logic: SkillFactory.create(s),
+            triggered: false
+        }));
+
+        this.path = config.path || [];
+        this.currentPathIndex = -1;
+        this.isMoving = false;
+        this.moveStartTime = 0;
+        this.moveStartPos = new THREE.Vector3();
 
         // 初始化位置
         this.model.position.set(config.position.x, config.position.y, config.position.z);
@@ -25,18 +35,66 @@ export class Monster {
     }
 
     update(elapsedTime, isGameRunning, telegraphManager, onAttack) {
-        // 如果還沒重生，檢查時間
         if (!this.spawned && isGameRunning && elapsedTime >= (this.config.spawn_time || 0)) {
             this.spawned = true;
             this.model.visible = true;
         }
 
-        // 只有遊戲運行且已重生才處理技能
         if (isGameRunning && this.spawned) {
+            // 處理移動路徑
+            this.path.forEach((node, index) => {
+                if (elapsedTime >= node.time && this.currentPathIndex < index) {
+                    this.currentPathIndex = index;
+                    if (node.duration === 0) {
+                        this.model.position.set(node.position.x, node.position.y, node.position.z);
+                        this.isMoving = false;
+                    } else {
+                        this.isMoving = true;
+                        this.moveStartTime = node.time;
+                        this.moveStartPos.copy(this.model.position);
+                    }
+                    // 如果有旋轉設定則套用
+                    if (node.rotation) {
+                        this.model.rotation.set(
+                            (node.rotation.x || 0) * (Math.PI / 180),
+                            (node.rotation.y || 0) * (Math.PI / 180),
+                            (node.rotation.z || 0) * (Math.PI / 180)
+                        );
+                    }
+                }
+            });
+
+            if (this.isMoving) {
+                const node = this.path[this.currentPathIndex];
+                const progress = (elapsedTime - this.moveStartTime) / node.duration;
+                if (progress >= 1) {
+                    this.model.position.set(node.position.x, node.position.y, node.position.z);
+                    this.isMoving = false;
+                } else {
+                    const target = new THREE.Vector3(node.position.x, node.position.y, node.position.z);
+                    this.model.position.lerpVectors(this.moveStartPos, target, progress);
+                }
+            }
+
+            // 處理技能觸發
             this.skills.forEach(skill => {
-                if (!skill.triggered && elapsedTime >= skill.time) {
+                if (!skill.triggered && elapsedTime >= (skill.data.time || 0)) {
                     skill.triggered = true;
-                    const targetPos = skill.position || this.config.position;
+                    // 新增：設定施法資訊
+                    if (!this.activeCast) {
+                        this.activeCast = {
+                            name: skill.data.name,
+                            startTime: Date.now(),
+                            duration: skill.data.cast_time
+                        };
+                    }
+
+                    // 修正：如果技能沒指定位置，則使用怪物「當前」位置
+                    const targetPos = skill.data.config.position || {
+                        x: this.model.position.x, // 補償 Tool.js 的座標轉換
+                        y: this.model.position.y,
+                        z: this.model.position.z
+                    };
                     telegraphManager.createTelegraph(skill, targetPos, onAttack);
                 }
             });
@@ -47,5 +105,9 @@ export class Monster {
         this.spawned = (this.config.spawn_time || 0) <= 0;
         this.model.visible = this.spawned;
         this.skills.forEach(s => s.triggered = false);
+        this.currentPathIndex = -1;
+        this.isMoving = false;
+        this.activeCast = null;
+        this.model.position.set(this.config.position.x, this.config.position.y, this.config.position.z);
     }
 }

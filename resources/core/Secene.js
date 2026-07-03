@@ -7,6 +7,7 @@ import { TelegraphManager } from './TelegraphManager';
 import { Monster } from './Monster';
 import { Tool } from './Tool';
 import { ActionBar } from './ActionBar';
+import { SkillFactory } from './skills/SkillFactory.js';
 
 class SceneManager {
     constructor() {
@@ -31,7 +32,7 @@ class SceneManager {
         this.interactionRaycaster = new THREE.Raycaster(); // 提升到成員變數複用
     }
 
-    async init(containerId, { floor, players, monsters }, selectedPlayerName) {
+    async init(containerId, { floor, players, monsters }, selectedPlayerName, isDebug = false) {
         // 使用 Tool 處理資料
         this.sceneData = {
             floor: Tool.processData('floor', floor),
@@ -64,7 +65,9 @@ class SceneManager {
 
         await this._setupObjects(selectedPlayerName);
         this._setupLights();
-        this._setupHelpers();
+        if (isDebug) {
+            this._setupHelpers();
+        }
         this._setupControls();
         this._setupEventListeners(container);
 
@@ -159,7 +162,8 @@ class SceneManager {
     _setupControls() {
         if (!this.controlledCharacter) return;
         const p = this.controlledCharacter.model.position;
-        this.camera.position.set(p.x, p.y + 0.5, p.z - 1);
+        const offset = this.controlledCharacter.config.camera_offset || { x: 0, y: 0.5, z: -1 };
+        this.camera.position.set(p.x + offset.x, p.y + offset.y, p.z + offset.z);
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.target.set(p.x, p.y + 0.3, p.z);
         this.controls.enableDamping = true;
@@ -182,17 +186,16 @@ class SceneManager {
         });
     }
 
-    _handleAttack = (skill, pos) => {
+    _handleAttack = (skillData, pos) => {
         this.characters.forEach(char => {
-            // 只計算 XZ 平面的距離，避免高度差導致無法判定命中
-            const charPos = new THREE.Vector2(char.model.position.x, char.model.position.z);
-            const attackPos = new THREE.Vector2(pos.x, pos.z);
-            const dist = charPos.distanceTo(attackPos);
-
-            if (dist <= skill.attack_range.radius) {
-                if (skill.debuff) {
+            const charPos = char.model.position;
+            // 邏輯封裝：直接呼叫該技能類別實例的判定方法
+            const logic = SkillFactory.create(skillData);
+            if (logic && logic.checkHit(charPos, pos)) {
+                const config = skillData.config;
+                if (config.debuff) {
                     char.addStatusEffect({
-                        ...skill.debuff,
+                        ...config.debuff,
                         startTime: Date.now()
                     });
                 }
@@ -258,11 +261,14 @@ class SceneManager {
 
         if (this.controlledCharacter && this.controls) {
             const p = this.controlledCharacter.model.position;
-            this.camera.position.set(p.x, p.y + 0.5, p.z - 1);
+            const offset = this.controlledCharacter.config.camera_offset || { x: 0, y: 0.5, z: -1 };
+            this.camera.position.set(p.x + offset.x, p.y + offset.y, p.z + offset.z);
             this.controls.target.set(p.x, p.y + 0.3, p.z);
             this.controls.update();
         }
         this.monsterInstances.forEach(m => m.reset());
+        const monsterList = document.getElementById('monster-list-container');
+        if (monsterList) monsterList.innerHTML = ''; // 清空怪物列表 UI
         this.groundObjects.forEach(f => {
             f.visible = true;
             f.userData.isDisappeared = false;
@@ -290,6 +296,7 @@ class SceneManager {
             this.characters.forEach(char => {
                 if (!char.isPlayer) char.moveByPath(char.pathData, this.groundObjects, dt);
             });
+            this._updateMonsterUI();
         } else {
             this.monsterInstances.forEach(m => m.update(0, false, null, null));
         }
@@ -303,7 +310,8 @@ class SceneManager {
             const delta = this.controlledCharacter.model.position.clone().sub(oldPos);
             if (delta.length() > 10) {
                 const p = this.controlledCharacter.config.default_position;
-                this.camera.position.set(p.x, p.y + 0.5, p.z - 1);
+                const offset = this.controlledCharacter.config.camera_offset || { x: 0, y: 0.5, z: -1 };
+                this.camera.position.set(p.x + offset.x, p.y + offset.y, p.z + offset.z);
                 this.controls.target.set(p.x, p.y + 0.3, p.z);
             } else {
                 this.camera.position.add(delta);
@@ -402,9 +410,59 @@ class SceneManager {
             if (obj.material) obj.material.dispose();
         });
     }
+
+    _updateMonsterUI() {
+        const container = document.getElementById('monster-list-container');
+        if (!container) return;
+
+        const now = Date.now();
+        this.monsterInstances.forEach((monster, index) => {
+            if (!monster.spawned) return;
+
+            const id = `monster-ui-${index}`;
+            let el = document.getElementById(id);
+
+            if (!el) {
+                el = document.createElement('div');
+                el.id = id;
+                el.className = "bg-black/60 p-2 rounded border border-white/10 flex flex-col gap-1 transition-opacity duration-300";
+                el.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-white text-xs font-bold">${monster.config.name}</span>
+                        <span class="cast-name text-yellow-400 text-[10px] italic"></span>
+                    </div>
+                    <div class="cast-bar-bg w-full h-1 bg-gray-800 rounded overflow-hidden opacity-0">
+                        <div class="cast-bar-fill h-full bg-yellow-500 w-0"></div>
+                    </div>
+                `;
+                container.appendChild(el);
+            }
+
+            const castName = el.querySelector('.cast-name');
+            const castBarBg = el.querySelector('.cast-bar-bg');
+            const castBarFill = el.querySelector('.cast-bar-fill');
+
+            if (monster.activeCast) {
+                const progress = (now - monster.activeCast.startTime) / (monster.activeCast.duration * 1000);
+
+                if (progress >= 1) {
+                    monster.activeCast = null; // 施法結束
+                    castBarBg.classList.add('opacity-0');
+                    castName.textContent = '';
+                } else {
+                    castName.textContent = monster.activeCast.name;
+                    castBarBg.classList.remove('opacity-0');
+                    castBarFill.style.width = `${progress * 100}%`;
+                }
+            } else {
+                castBarBg.classList.add('opacity-0');
+                castName.textContent = '';
+            }
+        });
+    }
 }
 
 const manager = new SceneManager();
-export const createScene = (id, data, name) => manager.init(id, data, name);
+export const createScene = (id, data, name, isDebug) => manager.init(id, data, name, isDebug);
 export const startGame = () => manager.start();
 export const resetGame = (name) => manager.reset(name);

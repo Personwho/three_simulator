@@ -9,54 +9,74 @@
             "y": 10,
             "z": -8
         },
-        "rotation": {
-            "x": 0,
-            "y": 180,
-            "z": 0
-        },
+        "path": [
+            {
+                "time": 2,
+                "position": {
+                    "x": 5,
+                    "y": 10,
+                    "z": -8
+                },
+                "duration": 2
+            },
+            {
+                "time": 7,
+                "position": {
+                    "x": 5,
+                    "y": 10,
+                    "z": 0
+                },
+                "duration": 0,
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                }
+            }
+        ],
         "skills": [
             {
                 "name": "泥寧爆發",
+                "type": "CircleSkill",
                 "time": 5,
                 "cast_time": 3,
-                "position": {
-                    "x": 0,
-                    "y": 10,
-                    "z": 0
-                },
-                "telegraph": {
-                    "type": "circle",
-                    "radius": 5
-                },
-                "attack_range": {
-                    "type": "circle",
-                    "radius": 5
-                },
-                "debuff": {
-                    "name": "加重",
-                    "type": "slow",
-                    "value": 0.3,
-                    "duration": 10,
-                    "isBuff": false,
-                    "icon": "assets/icons/加重.png"
+                "config": {
+                    "position": {
+                        "x": 5,
+                        "y": 10,
+                        "z": 0
+                    },
+                    "radius": 5,
+                    "debuff": {
+                        "name": "加重",
+                        "type": "slow",
+                        "value": 0.3,
+                        "duration": 10,
+                        "isBuff": false,
+                        "icon": "assets/icons/加重.png"
+                    }
                 }
             },
             {
-                "name": "同步攻擊",
+                "name": "泥寧爆發-側邊",
+                "type": "CircleSkill",
                 "time": 5,
                 "cast_time": 3,
-                "position": {
-                    "x": 10,
-                    "y": 10,
-                    "z": 0
-                },
-                "telegraph": {
-                    "type": "circle",
-                    "radius": 3
-                },
-                "attack_range": {
-                    "type": "circle",
-                    "radius": 3
+                "config": {
+                    "position": {
+                        "x": 3,
+                        "y": 10,
+                        "z": 0
+                    },
+                    "radius": 5,
+                    "debuff": {
+                        "name": "加重",
+                        "type": "slow",
+                        "value": 0.3,
+                        "duration": 10,
+                        "isBuff": false,
+                        "icon": "assets/icons/加重.png"
+                    }
                 }
             }
         ]

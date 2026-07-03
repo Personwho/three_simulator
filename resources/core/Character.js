@@ -11,6 +11,8 @@ export class Character {
         this.gravity = -9.8;
         this.velocityY = 0;
         this.isPlayer = isPlayer; // 標記是否為玩家
+        this.lastLandTime = 0; // 新增：記錄上一次落地的時間
+        this.isInAir = false;  // 新增：追蹤是否在空中
         this.onFall = null; // 掉落時的回呼函式
 
         this.keys = {};
@@ -76,6 +78,32 @@ export class Character {
         this._applyPhysicsAndInput(controls, groundObjects, deltaTime);
     }
 
+    // 徹底解決：具備法線回傳的碰撞偵測
+    _getCollisionData(direction, distance, groundObjects) {
+        if (!groundObjects || groundObjects.length === 0) return null;
+
+        const radius = 0.01; // 增加半徑，讓體積感更扎實
+        const checkHeights = [0.1, 0.4, 0.8, 1.2, 1.6]; // 從腳底到頭頂多層偵測
+        const horizontalRay = new THREE.Raycaster();
+        const angles = [0, Math.PI / 6, -Math.PI / 6, Math.PI / 3, -Math.PI / 3]; // 擴大偵測扇形
+
+        for (const height of checkHeights) {
+            for (const angle of angles) {
+                const rayDir = direction.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), angle).normalize();
+                const origin = this.model.position.clone().add(new THREE.Vector3(0, height, 0));
+
+                horizontalRay.set(origin, rayDir);
+                horizontalRay.far = radius + distance + 0.05; // 偵測半徑加上位移量
+
+                const hits = horizontalRay.intersectObjects(groundObjects, true);
+                if (hits.length > 0) {
+                    return hits[0];
+                }
+            }
+        }
+        return null;
+    }
+
     // NPC 路徑移動
     moveByPath(pathArray, groundObjects, deltaTime) {
         if (this.isPlayer || this.isRespawning || !pathArray || pathArray.length === 0) return;
@@ -123,16 +151,16 @@ export class Character {
         // 使用新的 target.position 結構
         const targetPos = target.position || { x: 0, y: 0, z: 0 };
         const targetVec = new THREE.Vector3(targetPos.x, this.model.position.y, targetPos.z);
-        const currentVec = this.model.position.clone();
-        const direction = new THREE.Vector3().subVectors(targetVec, currentVec);
+        const direction = new THREE.Vector3().subVectors(targetVec, this.model.position);
         const distance = direction.length();
 
         if (distance > 0.1) {
             direction.normalize();
             const moveStep = Math.min(this.currentMoveSpeed * deltaTime, distance);
-            this.model.position.add(direction.multiplyScalar(moveStep));
 
-            // 移動中時：自動朝向移動方向 (Y軸)
+            this.model.position.add(direction.clone().multiplyScalar(moveStep));
+
+            // 更新轉向
             const moveRotationY = Math.atan2(direction.x, direction.z) + Math.PI;
             this.model.rotation.y = moveRotationY;
         } else {
@@ -167,7 +195,7 @@ export class Character {
         const rayOrigin = this.model.position.clone().add(new THREE.Vector3(0, 10, 0));
         this.raycaster.set(rayOrigin, this.downVector);
         this.raycaster.far = 15;
-        const intersects = this.raycaster.intersectObjects(groundObjects);
+        const intersects = this.raycaster.intersectObjects(groundObjects, true); // 加上 true
 
         let currentGroundY = -Infinity;
         let isOnAnyGround = false;
@@ -177,8 +205,43 @@ export class Character {
             isOnAnyGround = true;
         }
 
-        // 判斷是否在地面上 (容許誤差 0.1)
-        const canJump = isOnAnyGround && Math.abs(this.model.position.y - currentGroundY) < 0.1;
+        const now = Date.now();
+        // 判斷是否在地面上且已過跳躍冷卻時間 (300ms)
+        const canJump = !this.isInAir &&
+            isOnAnyGround &&
+            Math.abs(this.model.position.y - currentGroundY) < 0.1 &&
+            (now - this.lastLandTime) > 100;
+
+        // 處理相機旋轉 (方向鍵功能同滑鼠右鍵) ---
+        if (controls) {
+            const rotSpeed = 2.5 * deltaTime; // 旋轉速度
+            let needsUpdate = false;
+
+            if (this.keys['arrowleft']) {
+                // 向左旋轉 (內部減少 theta)
+                controls.rotateLeft(-rotSpeed);
+                needsUpdate = true;
+            }
+            if (this.keys['arrowright']) {
+                // 向右旋轉 (內部增加 theta)
+                controls.rotateLeft(rotSpeed);
+                needsUpdate = true;
+            }
+            if (this.keys['arrowup']) {
+                // 向上仰視 (內部減少 phi)
+                controls.rotateUp(-rotSpeed);
+                needsUpdate = true;
+            }
+            if (this.keys['arrowdown']) {
+                // 向下俯視 (內部增加 phi)
+                controls.rotateUp(rotSpeed);
+                needsUpdate = true;
+            }
+
+            if (needsUpdate) {
+                controls.update(); // 立即更新控制器狀態
+            }
+        }
 
         // 處理平面移動 (WASD)
         const forward = new THREE.Vector3();
@@ -196,15 +259,45 @@ export class Character {
 
         // 如果有按移動鍵，處理水平位移與旋轉
         if (moveDir.length() > 0) {
-            moveDir.normalize().multiplyScalar(this.currentMoveSpeed * deltaTime);
-            this.model.position.add(moveDir);
-            const targetRotation = Math.atan2(moveDir.x, moveDir.z) + Math.PI;
-            this.model.rotation.y = targetRotation;
+            moveDir.normalize();
+            let moveStep = this.currentMoveSpeed * deltaTime;
+            let finalVelocity = moveDir.clone().multiplyScalar(moveStep);
+
+            // 第一次碰撞檢測
+            let hit = this._getCollisionData(moveDir, moveStep, groundObjects);
+
+            if (hit) {
+                // --- 核心：滑動向量計算 ---
+                // 取得撞擊面的法線 (世界座標)
+                const normal = hit.face.normal.clone().applyQuaternion(hit.object.quaternion);
+                normal.y = 0; // 穿牆檢測只處理水平分量
+                normal.normalize();
+
+                // 計算滑動方向：原方向減去在法線上的投影
+                const dot = finalVelocity.dot(normal);
+                finalVelocity.sub(normal.multiplyScalar(dot));
+
+                // 第二次檢查：確保滑動後的方向不會撞進另一面牆（例如角落）
+                if (finalVelocity.length() > 0.001) {
+                    const secondHit = this._getCollisionData(finalVelocity.clone().normalize(), finalVelocity.length(), groundObjects);
+                    if (secondHit) finalVelocity.set(0, 0, 0); // 在死角則停止
+                }
+            }
+
+            this.model.position.add(finalVelocity);
+
+            // 只有當真的有位移時才轉向
+            if (finalVelocity.length() > 0.0001) {
+                const targetRotation = Math.atan2(finalVelocity.x, finalVelocity.z) + Math.PI;
+                this.model.rotation.y = targetRotation;
+            }
         }
 
-        // 處理跳躍 (Space): 只有在地面上才允許跳躍
+        // 處理跳躍
         if (this.keys[' '] && canJump) {
-            this.velocityY = 3.0; // 給予垂直向上的初速度，數值可依手感調整
+            this.velocityY = 3.3; // 稍微增加一點跳躍力，避免跳不起來
+            this.isInAir = true; // 立即標記進入空中
+            this.lastLandTime = 0; // 重置落地時間，防止在空中連跳
         }
 
         // 2. 套用重力與碰撞修正 (原本的 _handlePhysics 會處理上升與下降)
@@ -217,32 +310,51 @@ export class Character {
         let currentGroundY = -Infinity;
         let isOnAnyGround = false;
 
-        // 偵測地表資訊
-        const rayOrigin = this.model.position.clone().add(new THREE.Vector3(0, 10, 0));
+        // 1. 處理跳躍上升時的頭部碰撞偵測 (天花板)
+        // 如果正在向上跳，發射向上射線，防止直接穿過上方地基
+        if (this.velocityY > 0) {
+            const headRayOrigin = this.model.position.clone().add(new THREE.Vector3(0, 1.6, 0));
+            this.raycaster.set(headRayOrigin, new THREE.Vector3(0, 1, 0));
+            this.raycaster.far = 0.5;
+            if (this.raycaster.intersectObjects(groundObjects, true).length > 0) {
+                this.velocityY = 0;
+            }
+        }
+
+        // 2. 修正向下偵測：將起點從 0.5 改為更接近腳底 (0.1)，減少「隔空吸附」
+        const rayOrigin = this.model.position.clone().add(new THREE.Vector3(0, 0.5, 0)); // 從腰部往下射
         this.raycaster.set(rayOrigin, this.downVector);
-        this.raycaster.far = 15;
-        const intersects = this.raycaster.intersectObjects(groundObjects);
+        this.raycaster.far = 0.5;
+        const intersects = this.raycaster.intersectObjects(groundObjects, true);
 
         if (intersects.length > 0) {
             currentGroundY = intersects[0].point.y;
-            isOnAnyGround = true;
+            // 關鍵修改：只有當「地面高度」不超過「當前腳底高度 + 階梯寬度(0.3)」時，才判定為地板
+            // 否則該物體被視為牆壁，不可站立
+            if (currentGroundY <= this.model.position.y + 0.3) {
+                isOnAnyGround = true;
+            }
         }
-
-        // 檢查 deltaTime 是否有效，防止 NaN
-        const dt = deltaTime || 0;
 
         // 重力也改為基於時間 (gravity 原本是 -0.2/frame，若要每秒 9.8 則設為 -9.8)
         this.velocityY += this.gravity * deltaTime;
         this.model.position.y += this.velocityY * deltaTime;
 
-        if (isOnAnyGround && this.model.position.y <= currentGroundY) {
-            if (this.model.position.y > currentGroundY - 5) {
+        // 3. 落地判定優化
+        if (isOnAnyGround && this.velocityY <= 0) {
+            // 只有落差在合理範圍內才落地
+            if (this.model.position.y <= currentGroundY + 0.1 && this.model.position.y >= currentGroundY - 0.5) {
+                // 只有從空中落下的那一瞬間才更新時間戳
+                if (this.isInAir) {
+                    this.lastLandTime = Date.now();
+                    this.isInAir = false;
+                }
                 this.model.position.y = currentGroundY;
                 this.velocityY = 0;
             }
         }
 
-        // 掉落判定：當高度低於 -10 (掉出場外) 且定義了回呼
+        // 掉落判定：當高度低於 0 (掉出場外) 且定義了回呼
         if (this.model.position.y <= 0) {
             if (typeof this.onFall === 'function') {
                 this.onFall();

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MechanicFactory } from './mechanics/MechanicFactory.js';
 
 export class Floor {
     /**
@@ -24,9 +25,18 @@ export class Floor {
                 baseModel.scale.set(config.scale, config.scale, config.scale);
             }
 
-            return config.positions.map(pos => {
+            return config.instances.map(inst => {
                 const instance = baseModel.clone();
+                const pos = inst.position;
                 instance.position.set(pos.x, pos.y, pos.z);
+
+                if (inst.rotation) {
+                    instance.rotation.set(
+                        (inst.rotation.x || 0) * (Math.PI / 180),
+                        (inst.rotation.y || 0) * (Math.PI / 180),
+                        (inst.rotation.z || 0) * (Math.PI / 180)
+                    );
+                }
                 return instance;
             });
         }
@@ -44,75 +54,58 @@ export class Floor {
                 break;
         }
 
-        const material = new THREE.MeshBasicMaterial({
-            color: parseInt(config.color)
+        // 定義材質
+        const material = new THREE.MeshStandardMaterial({
+            color: parseInt(config.color),
+            roughness: 1,
+            metalness: 0
         });
 
-        return config.positions.map(pos => {
-            const mesh = new THREE.Mesh(geometry, material.clone());
+        const mechanic = MechanicFactory.create(config.mechanics);
+
+        return config.instances.map(inst => {
+            // 如果 color 回歸在實例內，優先讀取 inst.color，否則用 config.color
+            const targetColor = inst.color ? parseInt(inst.color) : parseInt(config.color);
+
+            const material = new THREE.MeshStandardMaterial({
+                color: targetColor,
+                roughness: 1,
+                metalness: 0
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            const pos = inst.position;
+
             mesh.userData = {
                 id: config.id,
                 mechanics: config.mechanics,
-                originalColor: parseInt(config.color),
+                originalColor: targetColor,
                 standingTimer: 0,
                 activePlayers: new Set(),
-                isDisappeared: false
+                isDisappeared: false,
+                mechanicInstance: mechanic
             };
+
             mesh.position.set(
                 pos.x,
                 pos.y + config.size.height / 2,
                 pos.z
             );
+
+            if (inst.rotation) {
+                mesh.rotation.set(
+                    (inst.rotation.x || 0) * (Math.PI / 180),
+                    (inst.rotation.y || 0) * (Math.PI / 180),
+                    (inst.rotation.z || 0) * (Math.PI / 180)
+                );
+            }
             return mesh;
         });
     }
 
     static updateMechanics(floor, deltaTime) {
-        // 如果地板已消失，檢查是否已過 3 秒需要復原
-        if (floor.userData.isDisappeared) {
-            const now = Date.now();
-            const elapsed = (now - floor.userData.disappearStartTime) / 1000;
-            if (elapsed >= 3) {
-                floor.visible = true;
-                floor.userData.isDisappeared = false;
-                floor.userData.standingTimer = 0;
-                floor.material.color.setHex(floor.userData.originalColor);
-                console.log(`地基已復原`);
-            }
-            return;
-        }
-
-        const mech = floor.userData.mechanics;
-        if (!mech) return;
-
-        const playerCount = floor.userData.activePlayers.size;
-
-        // 必須先確定 max_players 存在且大於 0
-        if (typeof mech.max_players === 'number' && mech.max_players > 0) {
-            if (playerCount >= mech.max_players) {
-                floor.visible = false;
-                floor.userData.isDisappeared = true;
-                floor.userData.disappearStartTime = Date.now(); // 記錄消失時間
-                console.log(`地基因人數過多消失`);
-                return;
-            }
-        }
-
-        // 規則 2: 只有 1 人站立計時
-        if (playerCount === 1 && mech.time_limit > 0) {
-            floor.userData.standingTimer += deltaTime;
-            if (mech.time_limit && floor.userData.standingTimer > mech.time_limit - 2) {
-                floor.material.color.setHex(parseInt(mech.warning_color));
-            }
-            if (mech.time_limit && floor.userData.standingTimer > mech.time_limit) {
-                floor.visible = false;
-                floor.userData.isDisappeared = true;
-                floor.userData.disappearStartTime = Date.now(); // 記錄消失時間
-                console.log(`地基因站立超時消失`);
-            }
-        } else {
-            floor.userData.standingTimer = 0;
-            floor.material.color.setHex(floor.userData.originalColor);
+        if (floor.userData.mechanicInstance) {
+            floor.userData.mechanicInstance.update(floor, deltaTime);
         }
     }
 }

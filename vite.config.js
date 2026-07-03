@@ -11,6 +11,10 @@ export default defineConfig({
     ],
     server: {
         cors: true, // 允許開發環境的 CORS
+        host: '0.0.0.0',
+        allowedHosts: [
+            '3423-60-250-228-214.ngrok-free.app',
+        ],
     },
     preview: {
         cors: true, // 允許預覽環境的 CORS

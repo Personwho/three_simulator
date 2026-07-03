@@ -9,6 +9,8 @@ window.jQuery = $;
 import moment from 'moment';
 window.moment = moment;
 
+const isDebug = import.meta.env.VITE_APP_DEBUG;
+
 let currentSceneData = { floor: null, players: null, monsters: null };
 
 // 抓取 content 下所有子資料夾中的 .json 檔案
@@ -85,7 +87,7 @@ document.getElementById('load-scene').addEventListener('click', async () => {
     const selectedPlayer = document.getElementById('player-select').value;
     if (!currentSceneData.floor) return;
     const { createScene } = await import('../core/Secene.js');
-    createScene('three-container', currentSceneData, selectedPlayer);
+    createScene('three-container', currentSceneData, selectedPlayer, isDebug);
 });
 
 // 開始按鈕
@@ -120,7 +122,7 @@ async function initDefaultScene() {
         if (firstPlayerName) {
             document.getElementById('player-select').value = firstPlayerName;
             const { createScene } = await import('../core/Secene.js');
-            createScene('three-container', currentSceneData, firstPlayerName);
+            createScene('three-container', currentSceneData, firstPlayerName, isDebug);
         }
     }
 }

@@ -1,6 +1,5 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
-// require('dotenv').config();
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -13,7 +12,7 @@ function createWindow() {
     });
 
     // 這裡加入開啟開發者工具
-    if (process.env.APP_ENV !== 'production') {
+    if (process.env.APP_DEBUG) {
         win.webContents.openDevTools();
     }
     // 載入 Vite 打包後的 index.html
