@@ -1,0 +1,170 @@
+{
+    "A": {
+        "players": [
+            {
+                "name": "MT",
+                "model": "../models/Lalafell.glb",
+                "role": "T",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 4.5,
+                    "y": 10,
+                    "z": 2.5
+                },
+                "camera_offset": {
+                    "x": 0,
+                    "y": 0.5,
+                    "z": -1
+                },
+                "path": [
+                    {
+                        "position": {
+                            "x": 3.5,
+                            "y": 10,
+                            "z": 5.5
+                        },
+                        "stay": 20,
+                        "rotation": {
+                            "x": 0,
+                            "y": 0,
+                            "z": 0
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "ST",
+                "model": "../models/Lalafell.glb",
+                "role": "T",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 4.5,
+                    "y": 10,
+                    "z": 2.5
+                },
+                "camera_offset": {
+                    "x": 0,
+                    "y": 0.5,
+                    "z": -1
+                },
+                "path": [
+                    {
+                        "position": {
+                            "x": 5.5,
+                            "y": 10,
+                            "z": 5.5
+                        },
+                        "stay": 20,
+                        "rotation": {
+                            "x": 0,
+                            "y": 0,
+                            "z": 0
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "H1",
+                "model": "../models/Lalafell.glb",
+                "role": "H",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 4.5,
+                    "y": 10,
+                    "z": 2.5
+                },
+                "camera_offset": {
+                    "x": 0,
+                    "y": 0.5,
+                    "z": -1
+                },
+                "path": []
+            },
+            {
+                "name": "H2",
+                "model": "../models/Lalafell.glb",
+                "role": "H",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 4.5,
+                    "y": 10,
+                    "z": 2.5
+                },
+                "camera_offset": {
+                    "x": 0,
+                    "y": 0.5,
+                    "z": -1
+                },
+                "path": []
+            },
+            {
+                "name": "D1",
+                "model": "../models/Lalafell.glb",
+                "role": "D",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 4.5,
+                    "y": 10,
+                    "z": 2.5
+                },
+                "camera_offset": {
+                    "x": 0,
+                    "y": 0.5,
+                    "z": -1
+                },
+                "path": []
+            },
+            {
+                "name": "D2",
+                "model": "../models/Lalafell.glb",
+                "role": "D",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 4.5,
+                    "y": 10,
+                    "z": 2.5
+                },
+                "camera_offset": {
+                    "x": 0,
+                    "y": 0.5,
+                    "z": -1
+                },
+                "path": []
+            },
+            {
+                "name": "D3",
+                "model": "../models/Lalafell.glb",
+                "role": "D",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 4.5,
+                    "y": 10,
+                    "z": 2.5
+                },
+                "camera_offset": {
+                    "x": 0,
+                    "y": 0.5,
+                    "z": -1
+                },
+                "path": []
+            },
+            {
+                "name": "D4",
+                "model": "../models/Lalafell.glb",
+                "role": "D",
+                "scale": 0.3,
+                "default_position": {
+                    "x": 4.5,
+                    "y": 10,
+                    "z": 2.5
+                },
+                "camera_offset": {
+                    "x": 0,
+                    "y": 0.5,
+                    "z": -1
+                },
+                "path": []
+            }
+        ]
+    }
+}

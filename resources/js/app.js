@@ -106,9 +106,17 @@ async function initDefaultScene() {
     await populateSceneSelect();
     const sceneSelect = document.getElementById('scene-select');
 
-    // 如果有預設關卡則自動選取第一個
-    if (sceneSelect.options.length > 1) {
-        sceneSelect.selectedIndex = 1;
+    /// 優先匹配 "預設地圖"，若找不到則退而求其次選取第一個關卡
+    const targetScene = "預設地圖";
+    const hasTarget = Array.from(sceneSelect.options).some(opt => opt.value === targetScene);
+
+    if (hasTarget || sceneSelect.options.length > 1) {
+        if (hasTarget) {
+            sceneSelect.value = targetScene;
+        } else {
+            sceneSelect.selectedIndex = 1;
+        }
+
         const sceneName = sceneSelect.value;
         currentSceneData = await loadSceneData(sceneName);
         updatePlayerSelect(currentSceneData);

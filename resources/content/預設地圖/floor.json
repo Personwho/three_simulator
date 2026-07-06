@@ -1,12 +1,15 @@
 [
     {
-        "type": "Box",
-        "size": {
-            "width": 5,
-            "height": 10,
-            "depth": 5
+        "type": "StandardMechanic",
+        "model": {
+            "type": "StandardMechanic",
+            "size": {
+                "width": 5,
+                "height": 10,
+                "depth": 5
+            },
+            "color": "0xff00ff"
         },
-        "color": "0xff00ff",
         "instances": [
             {
                 "position": {
@@ -41,7 +44,7 @@
         }
     },
     {
-        "type": "Box",
+        "type": "StandardMechanic",
         "size": {
             "width": 5,
             "height": 10,
@@ -81,7 +84,7 @@
         }
     },
     {
-        "type": "Box",
+        "type": "StandardMechanic",
         "size": {
             "width": 1,
             "height": 0.6,

@@ -83,7 +83,7 @@ export class Monster {
         this.model.add(ringGroup);
     }
 
-    update(elapsedTime, isGameRunning, telegraphManager, onAttack) {
+    update(elapsedTime, isGameRunning, telegraphManager, onAttack, allCharacters) {
         if (!this.spawned && isGameRunning && elapsedTime >= (this.config.spawn_time || 0)) {
             this.spawned = true;
             this.model.visible = true;
@@ -129,8 +129,9 @@ export class Monster {
             this.skills.forEach(skill => {
                 if (!skill.triggered && elapsedTime >= (skill.data.time || 0)) {
                     skill.triggered = true;
-                    // 新增：設定施法資訊
-                    if (!this.activeCast) {
+
+                    // 設定讀條資訊供 UI 顯示
+                    if (skill.data.cast_time > 0) {
                         this.activeCast = {
                             name: skill.data.name,
                             startTime: Date.now(),
@@ -138,13 +139,31 @@ export class Monster {
                         };
                     }
 
-                    // 修正：如果技能沒指定位置，則使用怪物「當前」位置
-                    const targetPos = skill.data.config.position || {
-                        x: this.model.position.x, // 補償 Tool.js 的座標轉換
-                        y: this.model.position.y,
-                        z: this.model.position.z
-                    };
-                    telegraphManager.createTelegraph(skill, targetPos, onAttack);
+                    // 1. 角色篩選與選取邏輯
+                    let targets = [];
+                    const cfg = skill.data.config;
+                    if (cfg && cfg.target_role) {
+                        const candidates = allCharacters.filter(c => c.role === cfg.target_role);
+                        const count = cfg.target_count || 1;
+                        // 隨機洗牌抽籤
+                        targets = candidates.sort(() => 0.5 - Math.random()).slice(0, count);
+                    }
+
+                    // 修正點：優先讀取 JSON 中定義的 position，若無才使用怪物目前的座標
+                    const targetPos = (cfg && cfg.position) ?
+                        { x: cfg.position.x, y: cfg.position.y, z: cfg.position.z } :
+                        { x: this.model.position.x, y: this.model.position.y, z: this.model.position.z };
+
+                    // --- 核心修正：如果有多個目標，為每個目標獨立產生一個預警區 ---
+                    if (targets.length > 0) {
+                        targets.forEach(t => {
+                            // 每個預警區只追蹤一個特定目標 [t]
+                            telegraphManager.createTelegraph(skill, targetPos, onAttack, [t]);
+                        });
+                    } else {
+                        // 若無目標（例如圓形 AOE），則產生一個不帶目標的預警區
+                        telegraphManager.createTelegraph(skill, targetPos, onAttack, []);
+                    }
                 }
             });
         }

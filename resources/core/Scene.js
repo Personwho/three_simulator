@@ -120,6 +120,19 @@ class SceneManager {
             for (const teamName in this.sceneData.teams) {
                 for (const p of this.sceneData.teams[teamName].players) {
                     const gltf = await this.loader.loadAsync(p.model);
+
+                    // --- 強化角色顯色邏輯 ---
+                    gltf.scene.traverse(node => {
+                        if (node.isMesh) {
+                            node.material.roughness = 0.5;
+                            node.material.metalness = 0.2;
+                            // 關鍵修正：將自發光設為淡灰色，避免顏色過曝，但強度提高到 0.2~0.3
+                            node.material.emissive = new THREE.Color(0xffffff);
+                            node.material.emissiveIntensity = 0.3;
+                        }
+                    });
+                    // -----------------------
+
                     gltf.scene.scale.set(p.scale, p.scale, p.scale);
                     const isSelected = (p.name === selectedPlayerName);
                     const char = new Character(gltf.scene, this.camera, isSelected, { ...p, team: teamName });
@@ -145,15 +158,33 @@ class SceneManager {
     }
 
     _setupLights() {
-        this.scene.add(new THREE.AmbientLight(0xffffff, 2));
-        this.characters.forEach(char => {
-            const offsets = [[0, 1.2, 1.5], [0, 1.2, -1.5], [1.5, 1.2, 0], [-1.5, 1.2, 0]];
-            offsets.forEach(off => {
-                const light = new THREE.PointLight(0xffffff, 4, 0);
-                light.position.set(...off);
-                char.model.add(light);
-            });
-        });
+        // 1. 強大的基礎環境光：這是解決「角色太暗」最直接的方法
+        // 調高至 3.0 以上，強制拉高所有物件的最低亮度
+        const ambient = new THREE.AmbientLight(0xffffff, 10);
+        this.scene.add(ambient);
+
+        // 2. 半球光：提供自然的冷暖色調過渡 (天空白色，地面淺灰色)
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x888888, 3);
+        this.scene.add(hemiLight);
+
+        // 3. 主平行光：從上方垂直照射，建立頂部的亮面
+        const mainLight = new THREE.DirectionalLight(0xffffff, 3.0);
+        mainLight.position.set(0, 20, 0);
+        this.scene.add(mainLight);
+
+        // 4. 正面填補光：確保臉部永遠是亮的
+        const frontLight = new THREE.DirectionalLight(0xffffff, 4.0);
+        frontLight.position.set(0, 10, 20); // 從相機方向往回照
+        this.scene.add(frontLight);
+
+        // this.characters.forEach(char => {
+        //     const offsets = [[0, 1.2, 1.5], [0, 1.2, -1.5], [1.5, 1.2, 0], [-1.5, 1.2, 0]];
+        //     offsets.forEach(off => {
+        //         const light = new THREE.PointLight(0xffffff, 2, 0);
+        //         light.position.set(...off);
+        //         char.model.add(light);
+        //     });
+        // });
     }
 
     _setupHelpers() {
@@ -310,7 +341,25 @@ class SceneManager {
             this.controls.target.set(p.x, p.y + 0.3, p.z);
             this.controls.update();
         }
-        this.monsterInstances.forEach(m => m.reset());
+        if (this.telegraphManager) {
+            this.telegraphManager.clearAll();
+        }
+
+        for (let i = this.scene.children.length - 1; i >= 0; i--) {
+            const child = this.scene.children[i];
+            if (child.isMesh && child.material && child.material.transparent === true) {
+                // 針對預警材質特徵進行移除
+                if (child.geometry.type === 'PlaneGeometry' || child.geometry.type === 'CircleGeometry') {
+                    this.scene.remove(child);
+                }
+            }
+        }
+
+        this.monsterInstances.forEach(m => {
+            m.activeCast = null; // 強制清除讀條狀態
+            m.reset();
+        });
+
         const monsterList = document.getElementById('monster-list-container');
         if (monsterList) monsterList.innerHTML = ''; // 清空怪物列表 UI
         this.groundObjects.forEach(f => {
@@ -336,7 +385,7 @@ class SceneManager {
             const elapsed = (Date.now() - this.gameStartTime) / 1000;
             this._checkInteractions(dt, activeGround);
             this.telegraphManager.update();
-            this.monsterInstances.forEach(m => m.update(elapsed, true, this.telegraphManager, this._handleAttack));
+            this.monsterInstances.forEach(m => m.update(elapsed, true, this.telegraphManager, this._handleAttack, this.characters));
             this.characters.forEach(char => {
                 if (!char.isPlayer) char.moveByPath(char.pathData, this.groundObjects, dt);
             });
@@ -473,8 +522,8 @@ class SceneManager {
                 el.className = "bg-black/60 p-2 rounded border border-white/10 flex flex-col gap-1 transition-opacity duration-300";
                 el.innerHTML = `
                     <div class="flex justify-between items-center">
-                        <span class="text-white text-xs font-bold">${monster.config.name}</span>
-                        <span class="cast-name text-yellow-400 text-[10px] italic"></span>
+                        <span class="text-white font-bold">${monster.config.name}</span>
+                        <span class="cast-name text-yellow-400 "></span>
                     </div>
                     <div class="cast-bar-bg w-full h-1 bg-gray-800 rounded overflow-hidden opacity-0">
                         <div class="cast-bar-fill h-full bg-yellow-500 w-0"></div>
@@ -488,12 +537,14 @@ class SceneManager {
             const castBarFill = el.querySelector('.cast-bar-fill');
 
             if (monster.activeCast) {
-                const progress = (now - monster.activeCast.startTime) / (monster.activeCast.duration * 1000);
+                const elapsedMs = now - monster.activeCast.startTime;
+                const totalMs = monster.activeCast.duration * 1000;
+                let progress = elapsedMs / totalMs;
 
-                if (progress >= 1) {
-                    monster.activeCast = null; // 施法結束
+                if (progress >= 1.0) {
+                    // 核心修正：進度滿了之後，將 activeCast 設為空，下次更新就會隱藏 UI
+                    monster.activeCast = null;
                     castBarBg.classList.add('opacity-0');
-                    castName.textContent = '';
                 } else {
                     castName.textContent = monster.activeCast.name;
                     castBarBg.classList.remove('opacity-0');

@@ -1,0 +1,569 @@
+[
+    {
+        "name": "Boss",
+        "model": "../models/Lalafell.glb",
+        "hitbox_radius": 0.5,
+        "scale": 1.0,
+        "spawn_time": 0,
+        "position": {
+            "x": 4.5,
+            "y": 10,
+            "z": 4.5
+        },
+        "path": [],
+        "skills": [
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 1,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 2,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 3,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 4,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 5,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 6,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 7,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 8,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 0
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 1
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 1
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 2
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 2
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 3
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 3
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 4
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 4
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 5
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 5
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 6
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 6
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 7
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 7
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 8
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 8
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 0,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 1,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 2,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 3,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 4,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 5,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 6,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 7,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 8,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "即死區",
+                "type": "SquareSkill",
+                "time": 0,
+                "cast_time": 0,
+                "duration": 5400,
+                "config": {
+                    "size": 1,
+                    "position": {
+                        "x": 9,
+                        "y": 10,
+                        "z": 9
+                    }
+                }
+            },
+            {
+                "name": "經典銘心",
+                "type": "ConeSkill",
+                "time": 9,
+                "cast_time": 5,
+                "config": {
+                    "angle": 45,
+                    "radius": 10,
+                    "target_role": "T",
+                    "target_count": 2
+                }
+            }
+        ]
+    }
+]

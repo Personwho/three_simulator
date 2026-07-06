@@ -277,29 +277,34 @@ export class Character {
         if (moveDir.lengthSq() > 0) {
             moveDir.normalize();
             let moveStep = this.currentMoveSpeed * deltaTime;
+
+            // 修正點 1：先複製一份純方向向量，用於計算旋轉，避免被後面的移動縮放影響
+            const rotateDir = moveDir.clone();
+
             let hit = this._getCollisionData(moveDir, moveStep, groundObjects);
 
             if (hit) {
-                // 優化滑動邏輯 (Sliding)
-                const normal = hit.face.normal.clone().applyQuaternion(hit.object.quaternion);
-                normal.y = 0;
-                normal.normalize();
+                if (hit.face) {
+                    const normal = hit.face.normal.clone().applyQuaternion(hit.object.quaternion);
+                    normal.y = 0;
+                    normal.normalize();
 
-                // 計算投影並扣除，得到平行於牆面的分量
-                const dot = moveDir.dot(normal);
-                moveDir.sub(normal.multiplyScalar(dot));
+                    const dot = moveDir.dot(normal);
+                    moveDir.sub(normal.multiplyScalar(dot));
 
-                // 再次檢查滑動方向是否可行
-                if (moveDir.lengthSq() > 0.0001) {
-                    moveDir.normalize();
-                    const secondHit = this._getCollisionData(moveDir, moveStep, groundObjects);
-                    if (!secondHit) pos.add(moveDir.multiplyScalar(moveStep));
+                    if (moveDir.lengthSq() > 0.0001) {
+                        moveDir.normalize();
+                        const secondHit = this._getCollisionData(moveDir, moveStep, groundObjects);
+                        // 修正點 2：使用 clone() 進行乘法，不改變 moveDir 原有的長度判定
+                        if (!secondHit) pos.add(moveDir.clone().multiplyScalar(moveStep));
+                    }
                 }
             } else {
-                pos.add(moveDir.multiplyScalar(moveStep));
+                // 修正點 2：使用 clone() 進行乘法
+                pos.add(moveDir.clone().multiplyScalar(moveStep));
             }
 
-            // 更新轉向 (避免頻繁運算 Math.atan2)
+            // 修正點 3：使用 rotateDir 或 moveDir 的長度判定（確保不受 moveStep 影響）
             if (moveDir.lengthSq() > 0.0001) {
                 this.model.rotation.y = Math.atan2(moveDir.x, moveDir.z) + Math.PI;
             }
