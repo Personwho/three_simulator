@@ -9,7 +9,7 @@ window.jQuery = $;
 import moment from 'moment';
 window.moment = moment;
 
-const isDebug = import.meta.env.VITE_APP_DEBUG;
+const isDebug = import.meta.env.VITE_APP_DEBUG === 'true';
 
 let currentSceneData = { floor: null, players: null, monsters: null };
 
@@ -86,19 +86,19 @@ document.getElementById('scene-select').addEventListener('change', async (e) => 
 document.getElementById('load-scene').addEventListener('click', async () => {
     const selectedPlayer = document.getElementById('player-select').value;
     if (!currentSceneData.floor) return;
-    const { createScene } = await import('../core/Secene.js');
+    const { createScene } = await import('../core/Scene.js');
     createScene('three-container', currentSceneData, selectedPlayer, isDebug);
 });
 
 // 開始按鈕
 document.getElementById('start-game').addEventListener('click', () => {
-    import('../core/Secene.js').then(m => m.startGame());
+    import('../core/Scene.js').then(m => m.startGame());
 });
 
 // 重置按鈕
 document.getElementById('reset-game').addEventListener('click', () => {
     const selectedPlayer = document.getElementById('player-select').value;
-    import('../core/Secene.js').then(m => m.resetGame(selectedPlayer));
+    import('../core/Scene.js').then(m => m.resetGame(selectedPlayer));
 });
 
 // 初始化預設場景
@@ -121,7 +121,7 @@ async function initDefaultScene() {
 
         if (firstPlayerName) {
             document.getElementById('player-select').value = firstPlayerName;
-            const { createScene } = await import('../core/Secene.js');
+            const { createScene } = await import('../core/Scene.js');
             createScene('three-container', currentSceneData, firstPlayerName, isDebug);
         }
     }

@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Character } from './Character';
-import { Floor } from './Floor';
-import { TelegraphManager } from './TelegraphManager';
-import { Monster } from './Monster';
-import { Tool } from './Tool';
-import { ActionBar } from './ActionBar';
+import { Character } from './Character.js';
+import { Floor } from './Floor.js';
+import { TelegraphManager } from './TelegraphManager.js';
+import { Monster } from './Monster.js';
+import { Tool } from './Tool.js';
+import { ActionBar } from './ActionBar.js';
 import { SkillFactory } from './skills/SkillFactory.js';
 
 class SceneManager {
@@ -163,6 +163,31 @@ class SceneManager {
         const axes = new THREE.AxesHelper(10);
         axes.position.set(0, 10.01, 0);
         this.scene.add(axes);
+
+        // 新增：顯示地基物件的碰撞區域 (綠色)
+        this.groundObjects.forEach(obj => {
+            const helper = new THREE.BoxHelper(obj, 0x00ff00);
+            this.scene.add(helper);
+        });
+
+        // 新增：顯示角色的碰撞區域 (紅色)
+        this.characters.forEach(char => {
+            const radius = 0.08;
+            const height = 1;
+
+            const geometry = new THREE.CylinderGeometry(radius, radius, height, 16);
+            const material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
+            const collisionMesh = new THREE.Mesh(geometry, material);
+
+            // 將中心點移至模型正上方，使其底部剛好與腳底對齊
+            collisionMesh.position.y = height / 2;
+
+            // 將輔助網格直接加入到角色模型中，它會自動隨模型移動
+            char.model.add(collisionMesh);
+
+            // 標記為 debugHelper 方便後續管理
+            char.debugHelper = collisionMesh;
+        });
     }
 
     _setupControls() {
@@ -338,6 +363,7 @@ class SceneManager {
             }
         }
         if (this.controls) this.controls.update();
+
         this.renderer.render(this.scene, this.camera);
     }
 
