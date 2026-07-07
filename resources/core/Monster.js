@@ -130,6 +130,12 @@ export class Monster {
                 if (!skill.triggered && elapsedTime >= (skill.data.time || 0)) {
                     skill.triggered = true;
 
+                    // 處理序列技能 (Pattern)
+                    if (skill.data.pattern === "sequence") {
+                        skill.logic.runSequence(this, telegraphManager, onAttack, addLog);
+                        return;
+                    }
+
                     // 新增：處理讀條日誌 (如果不跳過日誌)
                     const noLog = skill.data.no_log || skill.data.config?.no_log;
                     if (!noLog) {

@@ -8,7 +8,8 @@ export class TelegraphManager {
 
     // 建立預警區
     createTelegraph(skillInstance, position, onComplete, targets = []) {
-        const mesh = skillInstance.logic.createTelegraphMesh();
+        const instanceId = `tg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`; // 生成唯一 ID
+        const mesh = skillInstance.logic.createTelegraphMesh(skillInstance.data);
         mesh.position.set(position.x, position.y + 0.01, position.z);
 
         if (targets.length > 0) {
@@ -34,10 +35,10 @@ export class TelegraphManager {
         });
 
         const castTime = (skillInstance.data.cast_time || 0) * 1000;
-        const duration = (skillInstance.data.duration || 1) * 1000;
+        const duration = (skillInstance.data.duration || 0.5) * 1000;
 
         this.activeTelegraphs.push({
-            mesh, skillInstance, position, indicators,
+            mesh, skillInstance, position, indicators, instanceId, // 存入 ID
             startTime: Date.now(),
             castTime, duration,
             state: castTime > 0 ? 'casting' : 'active',
@@ -105,6 +106,24 @@ export class TelegraphManager {
             if (t.state === 'waiting') {
                 const waitTime = (t.skillInstance.data.config?.wait_time || 0) * 1000;
                 if (now - t.startTime >= waitTime) {
+                    // --- 修正：更新為角色當前座標 ---
+                    if (t.indicators && t.indicators.length > 0) {
+                        const target = t.indicators[0].target;
+                        if (target && target.model) {
+                            const targetPos = target.model.position;
+                            // 1. 先計算朝向目標的水平弧度
+                            const angle = Math.atan2(
+                                targetPos.x - t.mesh.position.x,
+                                targetPos.z - t.mesh.position.z
+                            );
+                            // 2. 將此角度存儲在自定義屬性中，避開 Euler 角讀取問題
+                            t.targetRotationY = angle;
+    
+                            // 3. 視覺旋轉處理
+                            t.mesh.lookAt(targetPos.x, t.mesh.position.y, targetPos.z);
+                            t.mesh.rotateX(-Math.PI / 2);
+                        }
+                    }
                     t.state = 'active';
                     t.startTime = now;
                     t.mesh.visible = true;
@@ -121,7 +140,7 @@ export class TelegraphManager {
                 // 使用 t.mesh.rotation.y (經過 lookAt 處理後的 Y 軸弧度)
                 const rotationY = (t.targetRotationY !== undefined) ? t.targetRotationY : t.mesh.rotation.y;
                 if (t.onComplete) {
-                    t.onComplete(t.skillInstance.data, t.position, rotationY);
+                    t.onComplete(t.skillInstance.data, t.position, rotationY, t.instanceId);
                 }
 
                 // 4. 持續時間判定：超過 duration 則移除並從陣列中清理

@@ -32,7 +32,7 @@ class SceneManager {
         this.interactionRaycaster = new THREE.Raycaster(); // 提升到成員變數複用
         this.lastDamageLogTime = 0;
         this.skillLogTimes = new Map();
-        this.maxLogCount = 50; // 最大紀錄條數
+        this.maxLogCount = 200; // 最大紀錄條數
     }
 
     async init(containerId, { floor, players, monsters }, selectedPlayerName, isDebug = false) {
@@ -280,7 +280,7 @@ class SceneManager {
         });
     }
 
-    _handleAttack = (skillData, pos, rotationY) => {
+    _handleAttack = (skillData, pos, rotationY, instanceId) => {
         // 1. 取得技能定義資料
         const data = skillData.data || skillData;
 
@@ -295,30 +295,33 @@ class SceneManager {
 
         const now = Date.now();
         const noLog = data.no_log || data.config?.no_log;
-        const interval = 1000;
 
-        // 1. 施放紀錄 (CD 1000ms)
-        if (!noLog && (now - (this.skillLogTimes.get(`${data.name}_c`) || 0) > interval)) {
+        // 1. 施放紀錄
+        if (!noLog && (now - (this.skillLogTimes.get(`${data.name}_c`) || 0) > 1000)) {
             this._addLog(`Boss 施放 ${data.name}`, "text-yellow-400");
             this.skillLogTimes.set(`${data.name}_c`, now);
         }
 
         this.characters.forEach(char => {
-            if (!logic.checkHit(char.model.position, pos, rotationY)) return;
+            if (!logic.checkHit(char.model.position, pos, rotationY, data)) return;
 
             const isPlayer = char === this.controlledCharacter;
-            
-            // 2. 命中紀錄 (CD 1000ms)
-            if (isPlayer && (now - (this.skillLogTimes.get(`${data.name}_h`) || 0) > interval)) {
+            const hitKey = `${instanceId}_h`;
+            // 2. 命中紀錄
+            if (isPlayer && (now - (this.skillLogTimes.get(hitKey) || 0) > 500)) {
                 this._addLog(`[命中] ${char.name} 被 ${data.name} 擊中了！`, "text-red-500 font-bold");
-                this.skillLogTimes.set(`${data.name}_h`, now);
+                this.skillLogTimes.set(hitKey, now);
             }
 
             // 3. Debuff 紀錄
             const debuff = data.config?.debuff;
             if (debuff) {
                 char.addStatusEffect({ ...debuff, startTime: now });
-                if (isPlayer) this._addLog(`[狀態] ${char.name} 獲得了 ${debuff.name}`, "text-purple-400");
+                const debuffKey = `${instanceId}_d`;
+                if (isPlayer && (now - (this.skillLogTimes.get(debuffKey) || 0) > 500)) {
+                    this._addLog(`[狀態] ${char.name} 獲得了 ${debuff.name}`, "text-purple-400");
+                    this.skillLogTimes.set(debuffKey, now);
+                }
             }
         });
     }

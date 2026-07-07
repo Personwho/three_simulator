@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { BaseSkill } from './BaseSkill.js';
 
 export class SquareSkill extends BaseSkill {
-    createTelegraphMesh() {
+    createTelegraphMesh(skillData) {
         // 從 config.config 中讀取 size (正方形邊長)
-        const size = this.config.config?.size || 1;
-        const opacity = (this.config.opacity !== undefined) ? this.config.opacity : 0.5;
+        const size = skillData.config?.size || 1;
+        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
 
         // 使用平面幾何體
         const geometry = new THREE.PlaneGeometry(size, size);
@@ -26,8 +26,8 @@ export class SquareSkill extends BaseSkill {
         return mesh;
     }
 
-    checkHit(charPos, attackPos, attackRotationY) {
-        const size = this.config.config?.size || 1;
+    checkHit(charPos, attackPos, attackRotationY, skillData) {
+        const size = skillData.config?.size || 1;
         const halfSize = size / 2;
 
         // AABB 碰撞偵測 (XZ 平面)

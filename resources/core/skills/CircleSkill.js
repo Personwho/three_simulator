@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { BaseSkill } from './BaseSkill.js';
 
 export class CircleSkill extends BaseSkill {
-    createTelegraphMesh() {
+    createTelegraphMesh(skillData) {
         // 從 data.config 中讀取參數
-        const radius = this.config.config?.radius || 0;
-        const opacity = (this.config.opacity !== undefined) ? this.config.opacity : 0.5;
+        const radius = skillData.config?.radius || 0;
+        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
 
         const geometry = new THREE.CircleGeometry(radius, 64); // 增加分段讓圓形更平滑
         const material = new THREE.MeshBasicMaterial({
@@ -22,9 +22,9 @@ export class CircleSkill extends BaseSkill {
         mesh.rotation.x = -Math.PI / 2;
         return mesh;
     }
-    checkHit(charPos, attackPos, attackRotationY) {
+    checkHit(charPos, attackPos, attackRotationY, skillData) {
         // 從 data.config 中讀取半徑進行判定
-        const radius = this.config.config?.radius || 0;
+        const radius = skillData.config?.radius || 0;
         const dist = new THREE.Vector2(charPos.x, charPos.z).distanceTo(new THREE.Vector2(attackPos.x, attackPos.z));
         return dist <= radius;
     }

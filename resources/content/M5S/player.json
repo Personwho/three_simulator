@@ -19,14 +19,14 @@
                 "path": [
                     {
                         "position": {
-                            "x": 3.5,
+                            "x": 4,
                             "y": 10,
-                            "z": 5.5
+                            "z": 5
                         },
-                        "stay": 20,
+                        "stay": 40,
                         "rotation": {
                             "x": 0,
-                            "y": 0,
+                            "y": 45,
                             "z": 0
                         }
                     }
@@ -50,14 +50,40 @@
                 "path": [
                     {
                         "position": {
-                            "x": 5.5,
+                            "x": 5,
                             "y": 10,
-                            "z": 5.5
+                            "z": 5
                         },
-                        "stay": 20,
+                        "stay": 28,
                         "rotation": {
                             "x": 0,
-                            "y": 0,
+                            "y": -45,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 3,
+                        "rotation": {
+                            "x": 0,
+                            "y": 180,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 4,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 19,
+                        "rotation": {
+                            "x": 0,
+                            "y": 135,
                             "z": 0
                         }
                     }
@@ -78,7 +104,34 @@
                     "y": 0.5,
                     "z": -1
                 },
-                "path": []
+                "path": [
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 28,
+                        "rotation": {
+                            "x": 0,
+                            "y": 180,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 5
+                        },
+                        "stay": 22,
+                        "rotation": {
+                            "x": 0,
+                            "y": 0,
+                            "z": 0
+                        }
+                    }
+                ]
             },
             {
                 "name": "H2",
@@ -95,12 +148,26 @@
                     "y": 0.5,
                     "z": -1
                 },
-                "path": []
+                "path": [
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 50,
+                        "rotation": {
+                            "x": 0,
+                            "y": 180,
+                            "z": 0
+                        }
+                    }
+                ]
             },
             {
                 "name": "D1",
                 "model": "../models/Lalafell.glb",
-                "role": "D",
+                "role": "mD",
                 "scale": 0.3,
                 "default_position": {
                     "x": 4.5,
@@ -112,12 +179,39 @@
                     "y": 0.5,
                     "z": -1
                 },
-                "path": []
+                "path": [
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 31,
+                        "rotation": {
+                            "x": 0,
+                            "y": 180,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 5,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 19,
+                        "rotation": {
+                            "x": 0,
+                            "y": -135,
+                            "z": 0
+                        }
+                    }
+                ]
             },
             {
                 "name": "D2",
                 "model": "../models/Lalafell.glb",
-                "role": "D",
+                "role": "mD",
                 "scale": 0.3,
                 "default_position": {
                     "x": 4.5,
@@ -129,12 +223,39 @@
                     "y": 0.5,
                     "z": -1
                 },
-                "path": []
+                "path": [
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 31,
+                        "rotation": {
+                            "x": 0,
+                            "y": 180,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 5,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 19,
+                        "rotation": {
+                            "x": 0,
+                            "y": -135,
+                            "z": 0
+                        }
+                    }
+                ]
             },
             {
                 "name": "D3",
                 "model": "../models/Lalafell.glb",
-                "role": "D",
+                "role": "rD",
                 "scale": 0.3,
                 "default_position": {
                     "x": 4.5,
@@ -146,12 +267,52 @@
                     "y": 0.5,
                     "z": -1
                 },
-                "path": []
+                "path": [
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 28,
+                        "rotation": {
+                            "x": 0,
+                            "y": 180,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 5
+                        },
+                        "stay": 3,
+                        "rotation": {
+                            "x": 0,
+                            "y": 0,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 5,
+                            "y": 10,
+                            "z": 5
+                        },
+                        "stay": 19,
+                        "rotation": {
+                            "x": 0,
+                            "y": -45,
+                            "z": 0
+                        }
+                    }
+                ]
             },
             {
                 "name": "D4",
                 "model": "../models/Lalafell.glb",
-                "role": "D",
+                "role": "rD",
                 "scale": 0.3,
                 "default_position": {
                     "x": 4.5,
@@ -163,7 +324,47 @@
                     "y": 0.5,
                     "z": -1
                 },
-                "path": []
+                "path": [
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 4
+                        },
+                        "stay": 28,
+                        "rotation": {
+                            "x": 0,
+                            "y": 180,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 4.5,
+                            "y": 10,
+                            "z": 5
+                        },
+                        "stay": 3,
+                        "rotation": {
+                            "x": 0,
+                            "y": 0,
+                            "z": 0
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": 5,
+                            "y": 10,
+                            "z": 5
+                        },
+                        "stay": 19,
+                        "rotation": {
+                            "x": 0,
+                            "y": -45,
+                            "z": 0
+                        }
+                    }
+                ]
             }
         ]
     }

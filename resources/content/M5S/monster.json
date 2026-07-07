@@ -10,7 +10,22 @@
             "y": 10,
             "z": 4.5
         },
-        "path": [],
+        "path": [
+            {
+                "time": 0,
+                "position": {
+                    "x": 4.5,
+                    "y": 10,
+                    "z": 4.5
+                },
+                "duration": 0,
+                "rotation": {
+                    "x": 0,
+                    "y": 180,
+                    "z": 0
+                }
+            }
+        ],
         "skills": [
             {
                 "name": "即死區",
@@ -596,7 +611,7 @@
                 "opacity": 0,
                 "config": {
                     "angle": 45,
-                    "radius": 10,
+                    "radius": 15,
                     "target_role": "T",
                     "target_count": 2
                 }
@@ -609,11 +624,29 @@
                 "opacity": 0,
                 "config": {
                     "width": 1.6,
-                    "length": 10,
-                    "wait_time": 12,
+                    "length": 15,
+                    "wait_time": 13.5,
                     "target_role": "H",
                     "target_count": 2,
                     "target_opacity": 0
+                }
+            },
+            {
+                "name": "連指向、定格&播放",
+                "type": "SnapTwistDropTheNeedleSkill",
+                "pattern": "sequence",
+                "time": 28,
+                "cast_time": 5,
+                "duration": 0.5,
+                "opacity": 0,
+                "config": {
+                    "repeat_min": 2,
+                    "repeat_max": 4,
+                    "interval": 1,
+                    "groups": [
+                        {"width": 15, "height": 15, "angle_start": 90},
+                        {"width": 15, "height": 15, "angle_start": 270}
+                    ]
                 }
             }
         ]

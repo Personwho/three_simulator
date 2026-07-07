@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { BaseSkill } from './BaseSkill.js';
 
 export class ConeSkill extends BaseSkill {
-    createTelegraphMesh() {
-        const radius = this.config.config?.radius || 5;
-        const angle = (this.config.config?.angle || 90) * (Math.PI / 180);
-        const opacity = (this.config.opacity !== undefined) ? this.config.opacity : 0.5;
+    createTelegraphMesh(skillData) {
+        const radius = skillData.config?.radius || 5;
+        const angle = (skillData.config?.angle || 90) * (Math.PI / 180);
+        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
 
         // 核心修正：將 thetaStart 設為 (Math.PI/2 - angle/2)，使扇形中軸對準幾何座標的 Y 軸
         const geometry = new THREE.CircleGeometry(radius, 32, Math.PI / 2 * 3 - angle / 2, angle);
@@ -26,9 +26,9 @@ export class ConeSkill extends BaseSkill {
     }
 
     // 更新：扇形判定需要知道攻擊者的朝向 (rotation)
-    checkHit(charPos, attackPos, attackRotationY) {
-        const radius = this.config.config?.radius || 5;
-        const angleLimit = (this.config.config?.angle || 90) * (Math.PI / 180) / 2;
+    checkHit(charPos, attackPos, attackRotationY, skillData) {
+        const radius = skillData.config?.radius || 5;
+        const angleLimit = (skillData.config?.angle || 90) * (Math.PI / 180) / 2;
 
         const dx = charPos.x - attackPos.x;
         const dz = charPos.z - attackPos.z;

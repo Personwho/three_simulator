@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { BaseSkill } from './BaseSkill.js';
 
 export class LineSkill extends BaseSkill {
-    createTelegraphMesh() {
-        const width = this.config.config?.width || 2;
-        const length = this.config.config?.length || 10;
-        const opacity = (this.config.opacity !== undefined) ? this.config.opacity : 0.5;
+    createTelegraphMesh(skillData) {
+        const width = skillData.config?.width || 2;
+        const length = skillData.config?.length || 10;
+        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
 
         // 建立長方形幾何體
         const geometry = new THREE.PlaneGeometry(width, length);
@@ -26,9 +26,9 @@ export class LineSkill extends BaseSkill {
         return mesh;
     }
 
-    checkHit(charPos, attackPos, attackRotationY) {
-        const width = this.config.config?.width || 2;
-        const length = this.config.config?.length || 10;
+    checkHit(charPos, attackPos, attackRotationY, skillData) {
+        const width = skillData.config?.width || 2;
+        const length = skillData.config?.length || 10;
 
         // 1. 計算角色相對於攻擊起點的偏移向量
         const dx = charPos.x - attackPos.x;

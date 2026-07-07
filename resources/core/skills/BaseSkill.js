@@ -5,6 +5,6 @@ export class BaseSkill {
         this.castTime = config.cast_time;
         this.debuff = config.debuff;
     }
-    createTelegraphMesh() { throw new Error("Must implement"); }
-    checkHit(charPos, attackPos, attackRotationY) { throw new Error("Must implement"); }
+    createTelegraphMesh(skillData) { throw new Error("Must implement"); }
+    checkHit(charPos, attackPos, attackRotationY, skillData) { throw new Error("Must implement"); }
 }
