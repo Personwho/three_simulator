@@ -30,6 +30,9 @@ class SceneManager {
         this.lastStatusFingerprint = ""; // 新增：狀態清單指紋
         this.actionBar = new ActionBar();
         this.interactionRaycaster = new THREE.Raycaster(); // 提升到成員變數複用
+        this.lastDamageLogTime = 0;
+        this.skillLogTimes = new Map();
+        this.maxLogCount = 50; // 最大紀錄條數
     }
 
     async init(containerId, { floor, players, monsters }, selectedPlayerName, isDebug = false) {
@@ -63,6 +66,9 @@ class SceneManager {
 
         this.telegraphManager = new TelegraphManager(this.scene);
 
+        this._clearLogs();
+        this._addLog("場景載入完成", "text-blue-400");
+
         await this._setupObjects(selectedPlayerName);
         this._setupLights();
         if (isDebug) {
@@ -72,6 +78,32 @@ class SceneManager {
         this._setupEventListeners(container);
 
         this.animate(0);
+    }
+
+    // 新增：向畫面左下角添加紀錄
+    _addLog(message, colorClass = "text-white") {
+        const logList = document.getElementById('game-log-list');
+        if (!logList) return;
+
+        const time = new Date().toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const logItem = document.createElement('div');
+        logItem.className = `leading-tight ${colorClass}`;
+        logItem.innerHTML = `<span class="">[${time}]</span> ${message}`;
+
+        logList.appendChild(logItem);
+
+        // 限制紀錄條數，移除舊紀錄
+        while (logList.children.length > this.maxLogCount) {
+            logList.removeChild(logList.firstChild);
+        }
+
+        // 自動滾動到底部
+        logList.scrollTop = logList.scrollHeight;
+    }
+
+    _clearLogs() {
+        const logList = document.getElementById('game-log-list');
+        if (logList) logList.innerHTML = '';
     }
 
     async _setupObjects(selectedPlayerName) {
@@ -248,7 +280,7 @@ class SceneManager {
         });
     }
 
-    _handleAttack = (skillData, pos) => {
+    _handleAttack = (skillData, pos, rotationY) => {
         // 1. 取得技能定義資料
         const data = skillData.data || skillData;
 
@@ -259,27 +291,43 @@ class SceneManager {
             console.warn('Invalid skill or logic:', skillData);
             return;
         }
+        
+
+        const now = Date.now();
+        const noLog = data.no_log || data.config?.no_log;
+        const interval = 1000;
+
+        // 1. 施放紀錄 (CD 1000ms)
+        if (!noLog && (now - (this.skillLogTimes.get(`${data.name}_c`) || 0) > interval)) {
+            this._addLog(`Boss 施放 ${data.name}`, "text-yellow-400");
+            this.skillLogTimes.set(`${data.name}_c`, now);
+        }
 
         this.characters.forEach(char => {
-            const charPos = char.model.position;
+            if (!logic.checkHit(char.model.position, pos, rotationY)) return;
 
-            // 3. 執行命中判定
-            if (logic.checkHit(charPos, pos)) {
-                // 4. 取得 debuff 配置 (路徑：data.config.debuff)
-                const config = data.config;
-                if (config && config.debuff) {
-                    char.addStatusEffect({
-                        ...config.debuff,
-                        startTime: Date.now()
-                    });
-                    console.log(`命中！玩家 ${char.name} 獲得狀態: ${config.debuff.name}`);
-                }
+            const isPlayer = char === this.controlledCharacter;
+            
+            // 2. 命中紀錄 (CD 1000ms)
+            if (isPlayer && (now - (this.skillLogTimes.get(`${data.name}_h`) || 0) > interval)) {
+                this._addLog(`[命中] ${char.name} 被 ${data.name} 擊中了！`, "text-red-500 font-bold");
+                this.skillLogTimes.set(`${data.name}_h`, now);
+            }
+
+            // 3. Debuff 紀錄
+            const debuff = data.config?.debuff;
+            if (debuff) {
+                char.addStatusEffect({ ...debuff, startTime: now });
+                if (isPlayer) this._addLog(`[狀態] ${char.name} 獲得了 ${debuff.name}`, "text-purple-400");
             }
         });
     }
 
     start() {
         if (this.isGameRunning) return;
+
+        this._clearLogs();
+        this._addLog("戰鬥開始！", "text-green-400 font-bold");
 
         // 開始前再次確保所有狀態與技能重置
         this.characters.forEach(char => char.statusEffects = []);
@@ -293,6 +341,7 @@ class SceneManager {
     reset(selectedPlayerName = null) {
         this.isGameRunning = false;
         this.lastStatusFingerprint = ""; // 確保 UI 指紋在重置時被清空
+        this._addLog("遊戲重置", "text-gray-400");
 
         this.characters.forEach(char => {
             // 清除該角色的按鍵緩存，防止切換時角色自動亂跑
@@ -385,13 +434,30 @@ class SceneManager {
             const elapsed = (Date.now() - this.gameStartTime) / 1000;
             this._checkInteractions(dt, activeGround);
             this.telegraphManager.update();
-            this.monsterInstances.forEach(m => m.update(elapsed, true, this.telegraphManager, this._handleAttack, this.characters));
+            this.monsterInstances.forEach(monster => {
+                monster.update(
+                    elapsed, 
+                    true, 
+                    this.telegraphManager, 
+                    this._handleAttack, 
+                    this.characters,
+                    (msg, cls) => this._addLog(msg, cls) // 傳入日誌回調
+                );
+            });
             this.characters.forEach(char => {
                 if (!char.isPlayer) char.moveByPath(char.pathData, this.groundObjects, dt);
             });
             this._updateMonsterUI();
         } else {
-            this.monsterInstances.forEach(m => m.update(0, false, null, null));
+            this.monsterInstances.forEach(monster => { 
+                monster.update(
+                    0, 
+                    false, 
+                    null, 
+                    null, 
+                    (msg, cls) => this._addLog(msg, cls)
+                );
+            });
         }
 
         if (this.controlledCharacter) {

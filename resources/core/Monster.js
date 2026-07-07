@@ -83,7 +83,7 @@ export class Monster {
         this.model.add(ringGroup);
     }
 
-    update(elapsedTime, isGameRunning, telegraphManager, onAttack, allCharacters) {
+    update(elapsedTime, isGameRunning, telegraphManager, onAttack, allCharacters, addLog) {
         if (!this.spawned && isGameRunning && elapsedTime >= (this.config.spawn_time || 0)) {
             this.spawned = true;
             this.model.visible = true;
@@ -129,6 +129,12 @@ export class Monster {
             this.skills.forEach(skill => {
                 if (!skill.triggered && elapsedTime >= (skill.data.time || 0)) {
                     skill.triggered = true;
+
+                    // 新增：處理讀條日誌 (如果不跳過日誌)
+                    const noLog = skill.data.no_log || skill.data.config?.no_log;
+                    if (!noLog) {
+                        addLog(`${this.config.name} 開始讀條: ${skill.data.name}`, "text-yellow-100 opacity-80");
+                    }
 
                     // 設定讀條資訊供 UI 顯示
                     if (skill.data.cast_time > 0) {

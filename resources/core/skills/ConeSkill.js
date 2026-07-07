@@ -5,13 +5,14 @@ export class ConeSkill extends BaseSkill {
     createTelegraphMesh() {
         const radius = this.config.config?.radius || 5;
         const angle = (this.config.config?.angle || 90) * (Math.PI / 180);
+        const opacity = (this.config.opacity !== undefined) ? this.config.opacity : 0.5;
 
         // 核心修正：將 thetaStart 設為 (Math.PI/2 - angle/2)，使扇形中軸對準幾何座標的 Y 軸
         const geometry = new THREE.CircleGeometry(radius, 32, Math.PI / 2 * 3 - angle / 2, angle);
         const material = new THREE.MeshBasicMaterial({
             color: 0xffa500,
             transparent: true,
-            opacity: 0.5,
+            opacity: opacity,
             side: THREE.DoubleSide,
             depthWrite: false,
             polygonOffset: true,

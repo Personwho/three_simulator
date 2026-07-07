@@ -5,13 +5,14 @@ export class SquareSkill extends BaseSkill {
     createTelegraphMesh() {
         // 從 config.config 中讀取 size (正方形邊長)
         const size = this.config.config?.size || 1;
+        const opacity = (this.config.opacity !== undefined) ? this.config.opacity : 0.5;
 
         // 使用平面幾何體
         const geometry = new THREE.PlaneGeometry(size, size);
         const material = new THREE.MeshBasicMaterial({
             color: 0xff0000,
             transparent: true,
-            opacity: 0.4, // 讀條時較淡
+            opacity: opacity, // 讀條時較淡
             side: THREE.DoubleSide,
             depthWrite: false,      // ✅ 關閉深度寫入
             polygonOffset: true,    // ✅ 啟用多邊形偏移
@@ -25,7 +26,7 @@ export class SquareSkill extends BaseSkill {
         return mesh;
     }
 
-    checkHit(charPos, attackPos) {
+    checkHit(charPos, attackPos, attackRotationY) {
         const size = this.config.config?.size || 1;
         const halfSize = size / 2;
 

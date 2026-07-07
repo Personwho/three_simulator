@@ -46,6 +46,13 @@
         class="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 flex gap-1 bg-black/40 p-2 rounded-t-lg border-x border-t border-white/20">
     </div>
 
+    <!-- 新增：遊戲紀錄容器 -->
+    <div id="game-log-container" class="absolute bottom-10 left-4 z-50 w-80 h-48 pointer-events-none flex flex-col overflow-hidden">
+        <div id="game-log-list" class="h-full overflow-y-auto pointer-events-auto flex flex-col gap-1 p-2 bg-black/60 rounded border border-white/10 shadow-xl scrollbar-thin scrollbar-thumb-gray-500">
+            <!-- 紀錄會在這裡動態生成 -->
+        </div>
+    </div>
+
     <div id="three-container" class="w-screen h-screen"></div>
 
     <script type="module" src="./resources/js/app.js"></script>
