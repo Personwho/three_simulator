@@ -34,7 +34,33 @@ export class Tool {
 
                     m.skills.forEach(s => {
                         if (s.config && s.config.position) {
-                            s.config.position.x *= -1;
+                            if (Array.isArray(s.config.position)) {
+                                // 如果是陣列，遍歷每一筆資料轉換 x 座標
+                                s.config.position.forEach(pos => {
+                                    if (pos && typeof pos.x === 'number') {
+                                        pos.x *= -1;
+                                    }
+                                });
+                            } else {
+                                // 如果是單一物件
+                                s.config.position.x *= -1;
+                            }
+                        }
+
+                        if(s.config && s.config.skills) {
+                            s.config.skills.forEach(subSkill => {
+                                if (subSkill.config && subSkill.config.position) {
+                                    if (Array.isArray(subSkill.config.position)) {
+                                        subSkill.config.position.forEach(pos => {
+                                            if (pos && typeof pos.x === 'number') {
+                                                pos.x *= -1;
+                                            }
+                                        });
+                                    } else {
+                                        subSkill.config.position.x *= -1;
+                                    }
+                                }
+                            });
                         }
                     });
                 });

@@ -143,9 +143,15 @@ export class Monster {
                         this._handleShuffledSequence(skill.data, telegraphManager, onAttack, allCharacters, addLog);
                         return;
                     }
+
+                    // 新增：處理隨機抽一個施放
+                    if (skill.data.pattern === "random_single") {
+                        this._handleRandomSingle(skill.data, telegraphManager, onAttack, allCharacters, addLog);
+                        return;
+                    }
                     
-                    // 處理序列技能 (Pattern)
-                    if (skill.data.pattern === "sequence") {
+                    // 處理序列技能
+                    if (skill.logic.runSequence) {
                         skill.logic.runSequence(this, telegraphManager, onAttack, addLog);
                         return;
                     }
@@ -183,8 +189,8 @@ export class Monster {
                     }
 
                     // 修正點：優先讀取 JSON 中定義的 position，若無才使用怪物目前的座標
-                    const targetPos = (cfg && cfg.position) ?
-                        { x: cfg.position.x, y: cfg.position.y, z: cfg.position.z } :
+                    const targetPos = (cfg && cfg.position) ? 
+                        cfg.position : 
                         { x: this.model.position.x, y: this.model.position.y, z: this.model.position.z };
 
                     // --- 核心修正：如果有多個目標，為每個目標獨立產生一個預警區 ---
@@ -292,8 +298,8 @@ export class Monster {
             });
         }
         
-        const targetPos = (cfg && cfg.position) ?
-            { x: cfg.position.x, y: cfg.position.y, z: cfg.position.z } :
+        const targetPos = (cfg && cfg.position) ? 
+            cfg.position : 
             { x: this.model.position.x, y: this.model.position.y, z: this.model.position.z };
 
         if (targets.length > 0) {
@@ -303,5 +309,25 @@ export class Monster {
         } else {
             telegraphManager.createTelegraph(skill, targetPos, onAttack, []);
         }
+    }
+
+    /**
+     * 處理隨機抽一個技能施放
+     */
+    _handleRandomSingle(skillData, telegraphManager, onAttack, allCharacters, addLog) {
+        const config = skillData.config;
+        if (!config.skills || config.skills.length === 0) return;
+        
+        // 從清單中隨機挑選一個索引
+        const randomIndex = Math.floor(Math.random() * config.skills.length);
+        const subData = config.skills[randomIndex];
+        
+        const skillInstance = {
+            data: subData,
+            logic: SkillFactory.create(subData)
+        };
+        
+        // 立即執行選中的技能
+        this._executeSingleSkill(skillInstance, telegraphManager, onAttack, allCharacters, addLog);
     }
 }

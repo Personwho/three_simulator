@@ -1,7 +1,7 @@
 [
     {
         "name": "Boss",
-        "model": "../models/Lalafell.glb",
+        "model": "models/Lalafell.glb",
         "hitbox_radius": 0.5,
         "scale": 1.0,
         "spawn_time": 0,
@@ -35,572 +35,22 @@
                 "cast_time": 0,
                 "duration": 5400,
                 "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 1,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 2,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 3,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 4,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 5,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 6,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 7,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 8,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 0
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 1
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 1
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 2
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 2
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 3
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 3
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 4
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 4
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 5
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 5
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 6
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 6
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 7
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 7
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 8
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 8
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 0,
-                        "y": 10,
-                        "z": 9
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 1,
-                        "y": 10,
-                        "z": 9
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 2,
-                        "y": 10,
-                        "z": 9
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 3,
-                        "y": 10,
-                        "z": 9
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 4,
-                        "y": 10,
-                        "z": 9
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 5,
-                        "y": 10,
-                        "z": 9
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 6,
-                        "y": 10,
-                        "z": 9
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 7,
-                        "y": 10,
-                        "z": 9
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 8,
-                        "y": 10,
-                        "z": 9
-                    }
-                }
-            },
-            {
-                "name": "即死區",
-                "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "size": 1,
-                    "position": {
-                        "x": 9,
-                        "y": 10,
-                        "z": 9
-                    }
+                    "width": 1,
+                    "height": 1,
+                    "position": [
+                        {"x": 0, "y": 10, "z": 0}, {"x": 1, "y": 10, "z": 0}, {"x": 2, "y": 10, "z": 0},
+                        {"x": 3, "y": 10, "z": 0}, {"x": 4, "y": 10, "z": 0}, {"x": 5, "y": 10, "z": 0},
+                        {"x": 6, "y": 10, "z": 0}, {"x": 7, "y": 10, "z": 0}, {"x": 8, "y": 10, "z": 0},
+                        {"x": 9, "y": 10, "z": 0}, {"x": 0, "y": 10, "z": 1}, {"x": 9, "y": 10, "z": 1},
+                        {"x": 0, "y": 10, "z": 2}, {"x": 9, "y": 10, "z": 2}, {"x": 0, "y": 10, "z": 3},
+                        {"x": 9, "y": 10, "z": 3}, {"x": 0, "y": 10, "z": 4}, {"x": 9, "y": 10, "z": 4},
+                        {"x": 0, "y": 10, "z": 5}, {"x": 9, "y": 10, "z": 5}, {"x": 0, "y": 10, "z": 6},
+                        {"x": 9, "y": 10, "z": 6}, {"x": 0, "y": 10, "z": 7}, {"x": 9, "y": 10, "z": 7},
+                        {"x": 0, "y": 10, "z": 8}, {"x": 9, "y": 10, "z": 8}, {"x": 0, "y": 10, "z": 9},
+                        {"x": 1, "y": 10, "z": 9}, {"x": 2, "y": 10, "z": 9}, {"x": 3, "y": 10, "z": 9},
+                        {"x": 4, "y": 10, "z": 9}, {"x": 5, "y": 10, "z": 9}, {"x": 6, "y": 10, "z": 9},
+                        {"x": 7, "y": 10, "z": 9}, {"x": 8, "y": 10, "z": 9}, {"x": 9, "y": 10, "z": 9}
+                    ]
                 }
             },
             {
@@ -679,7 +129,6 @@
             {
                 "name": "連指向、定格&播放",
                 "type": "SnapTwistDropTheNeedleSkill",
-                "pattern": "sequence",
                 "time": 48,
                 "cast_time": 5,
                 "duration": 0.5,
@@ -707,7 +156,173 @@
                     },
                     "radius": 15
                 }
-            }
+            },
+            {
+                "name": "激熱跳舞街",
+                "type": "CircleSkill",
+                "time": 72,
+                "cast_time": 4,
+                "opacity": 0,
+                "config": {
+                    "position": {
+                        "x": 4.5,
+                        "y": 10,
+                        "z": 4.5
+                    },
+                    "radius": 15
+                }
+            },
+            {
+                "name": "激熱跳舞街-場地",
+                "type": "FunkyFloorSkill",
+                "time": 78,
+                "cast_time": 0,
+                "no_log": true,
+                "config": { 
+                    "width": 1,
+                    "height": 1,
+                    "repeat_count": 5,
+                    "pre_warning_time": 4,
+                    "interval_time": 3.5,
+                    "position": [
+                        {"x": 2, "y": 10, "z": 1}, {"x": 4, "y": 10, "z": 1}, {"x": 6, "y": 10, "z": 1}, {"x": 8, "y": 10, "z": 1},
+                        {"x": 2, "y": 10, "z": 3}, {"x": 4, "y": 10, "z": 3}, {"x": 6, "y": 10, "z": 3}, {"x": 8, "y": 10, "z": 3},
+                        {"x": 2, "y": 10, "z": 5}, {"x": 4, "y": 10, "z": 5}, {"x": 6, "y": 10, "z": 5}, {"x": 8, "y": 10, "z": 5},
+                        {"x": 2, "y": 10, "z": 7}, {"x": 4, "y": 10, "z": 7}, {"x": 6, "y": 10, "z": 7}, {"x": 8, "y": 10, "z": 7},
+
+                        {"x": 1, "y": 10, "z": 2}, {"x": 3, "y": 10, "z": 2}, {"x": 5, "y": 10, "z": 2}, {"x": 7, "y": 10, "z": 2},
+                        {"x": 1, "y": 10, "z": 4}, {"x": 3, "y": 10, "z": 4}, {"x": 5, "y": 10, "z": 4}, {"x": 7, "y": 10, "z": 4},
+                        {"x": 1, "y": 10, "z": 6}, {"x": 3, "y": 10, "z": 6}, {"x": 5, "y": 10, "z": 6}, {"x": 7, "y": 10, "z": 6},
+                        {"x": 1, "y": 10, "z": 8}, {"x": 3, "y": 10, "z": 8}, {"x": 5, "y": 10, "z": 8}, {"x": 7, "y": 10, "z": 8}
+                    ]
+                }
+            },
+            {
+                "name": "激熱跳舞街-場地",
+                "type": "FunkyFloorSkill",
+                "time": 82,
+                "cast_time": 0,
+                "no_log": true,
+                "config": { 
+                    "width": 1,
+                    "height": 1,
+                    "repeat_count": 5,
+                    "pre_warning_time": 4,
+                    "interval_time": 3.5,
+                    "position": [
+                        {"x": 2, "y": 10, "z": 2}, {"x": 4, "y": 10, "z": 2}, {"x": 6, "y": 10, "z": 2}, {"x": 8, "y": 10, "z": 2},
+                        {"x": 2, "y": 10, "z": 4}, {"x": 4, "y": 10, "z": 4}, {"x": 6, "y": 10, "z": 4}, {"x": 8, "y": 10, "z": 4},
+                        {"x": 2, "y": 10, "z": 6}, {"x": 4, "y": 10, "z": 6}, {"x": 6, "y": 10, "z": 6}, {"x": 8, "y": 10, "z": 6},
+                        {"x": 2, "y": 10, "z": 8}, {"x": 4, "y": 10, "z": 8}, {"x": 6, "y": 10, "z": 8}, {"x": 8, "y": 10, "z": 8},
+
+                        {"x": 1, "y": 10, "z": 1}, {"x": 3, "y": 10, "z": 1}, {"x": 5, "y": 10, "z": 1}, {"x": 7, "y": 10, "z": 1},
+                        {"x": 1, "y": 10, "z": 3}, {"x": 3, "y": 10, "z": 3}, {"x": 5, "y": 10, "z": 3}, {"x": 7, "y": 10, "z": 3},
+                        {"x": 1, "y": 10, "z": 5}, {"x": 3, "y": 10, "z": 5}, {"x": 5, "y": 10, "z": 5}, {"x": 7, "y": 10, "z": 5},
+                        {"x": 1, "y": 10, "z": 7}, {"x": 3, "y": 10, "z": 7}, {"x": 5, "y": 10, "z": 7}, {"x": 7, "y": 10, "z": 7}
+                    ]
+                }
+            },
+            {
+                "name": "鋼鐵圓環隨機順序",
+                "type": "ConcentricDonutSkill",
+                "time": 84.5,
+                "cast_time": 5,
+                "config": {
+                    "wait_time": 0.5,
+                    "inner_radius": 1.5,
+                    "outer_radius": 15,
+                    "interval": 1.5,
+                    "inner_first_name": "外翻內轉",
+                    "outer_first_name": "內翻外轉"
+                }
+            },
+            {
+                "name": "AB面隨機二選一",
+                "pattern": "random_single",
+                "time": 95,
+                "config": {
+                    "skills": [
+                        {
+                            "name": "放入A面",
+                            "type": "ConeSkill",
+                            "cast_time": 4,
+                            "opacity": 0,
+                            "config": {
+                                "angle": 45,
+                                "radius": 15,
+                                "wait_time": 22.5,
+                                "targets": [
+                                    {"role": ["T"], "count": 1},
+                                    {"role": ["H"], "count": 1},
+                                    {"role": ["rD", "mD"], "count": 1}
+                                ],
+                                "target_opacity": 0
+                            }
+                        },
+                        {
+                            "name": "放入B面",
+                            "type": "LineSkill",
+                            "cast_time": 4,
+                            "opacity": 0,
+                            "config": {
+                                "width": 1.6,
+                                "length": 15,
+                                "wait_time": 22.5,
+                                "targets": [
+                                    {"role": ["H"], "count": 2}
+                                ],
+                                "target_opacity": 0
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "連指向、定格&播放",
+                "type": "SnapTwistDropTheNeedleSkill",
+                "pattern": "sequence",
+                "time": 111,
+                "cast_time": 5,
+                "duration": 0.5,
+                "opacity": 0,
+                "config": {
+                    "repeat_min": 2,
+                    "repeat_max": 4,
+                    "groups": [
+                        {"width": 15, "height": 15, "angle_start": 90},
+                        {"width": 15, "height": 15, "angle_start": 270}
+                    ]
+                }
+            },
+            {
+                "name": "歡慶時刻",
+                "type": "CircleSkill",
+                "time": 122,
+                "cast_time": 5,
+                "opacity": 0,
+                "config": {
+                    "position": {
+                        "x": 4.5,
+                        "y": 10,
+                        "z": 4.5
+                    },
+                    "radius": 15
+                }
+            },
+            {
+                "name": "經典銘心",
+                "type": "ConeSkill",
+                "time": 130,
+                "cast_time": 5,
+                "opacity": 0,
+                "config": {
+                    "angle": 45,
+                    "radius": 15,
+                    "targets": [
+                        {"role": ["T"], "count": 2}
+                    ]
+                }
+            },
         ]
     }
 ]

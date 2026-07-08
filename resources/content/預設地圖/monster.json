@@ -1,7 +1,7 @@
 [
     {
         "name": "Boss",
-        "model": "../models/Lalafell.glb",
+        "model": "models/Lalafell.glb",
         "hitbox_radius": 0.5,
         "scale": 1.0,
         "spawn_time": 0,

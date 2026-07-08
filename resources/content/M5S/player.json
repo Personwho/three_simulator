@@ -3,7 +3,7 @@
         "players": [
             {
                 "name": "MT",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "T",
                 "scale": 0.3,
                 "default_position": {
@@ -34,7 +34,7 @@
             },
             {
                 "name": "ST",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "T",
                 "scale": 0.3,
                 "default_position": {
@@ -91,7 +91,7 @@
             },
             {
                 "name": "H1",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "H",
                 "scale": 0.3,
                 "default_position": {
@@ -135,7 +135,7 @@
             },
             {
                 "name": "H2",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "H",
                 "scale": 0.3,
                 "default_position": {
@@ -166,7 +166,7 @@
             },
             {
                 "name": "D1",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "mD",
                 "scale": 0.3,
                 "default_position": {
@@ -210,7 +210,7 @@
             },
             {
                 "name": "D2",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "mD",
                 "scale": 0.3,
                 "default_position": {
@@ -254,7 +254,7 @@
             },
             {
                 "name": "D3",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "rD",
                 "scale": 0.3,
                 "default_position": {
@@ -311,7 +311,7 @@
             },
             {
                 "name": "D4",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "rD",
                 "scale": 0.3,
                 "default_position": {

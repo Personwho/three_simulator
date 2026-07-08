@@ -3,37 +3,63 @@ import { BaseSkill } from './BaseSkill.js';
 
 export class SquareSkill extends BaseSkill {
     createTelegraphMesh(skillData) {
-        // 從 config.config 中讀取 size (正方形邊長)
-        const size = skillData.config?.size || 1;
+        const width = skillData.config?.width || 1;
+        const height = skillData.config?.height || 1;
         const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
+        const positions = skillData.config?.position;
 
-        // 使用平面幾何體
-        const geometry = new THREE.PlaneGeometry(size, size);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0xff0000,
-            transparent: true,
-            opacity: opacity, // 讀條時較淡
-            side: THREE.DoubleSide,
-            depthWrite: false,      // ✅ 關閉深度寫入
-            polygonOffset: true,    // ✅ 啟用多邊形偏移
-            polygonOffsetFactor: -1, // ✅ 讓預警區域略微「浮起」
-            polygonOffsetUnits: -1
-        });
+        const createPlane = () => {
+            const geometry = new THREE.PlaneGeometry(width, height);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                transparent: true,
+                opacity: opacity,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            });
+            
+            return new THREE.Mesh(geometry, material);
+        };
 
-        const mesh = new THREE.Mesh(geometry, material);
-        // 旋轉使平面貼在地上
-        mesh.rotation.x = -Math.PI / 2;
-        return mesh;
+        if (Array.isArray(positions) && positions.length > 0) {
+            const group = new THREE.Group();
+            const base = positions[0]; 
+            positions.forEach(pos => {
+                const mesh = createPlane();
+                
+                mesh.position.set(
+                    pos.x - base.x,
+                    base.z - pos.z,
+                    0
+                );
+                group.add(mesh);
+            });
+            return group;
+        }
+
+        return createPlane();
     }
 
     checkHit(charPos, attackPos, attackRotationY, skillData) {
-        const size = skillData.config?.size || 1;
-        const halfSize = size / 2;
+        const width = skillData.config?.width || 1;
+        const height = skillData.config?.height || 1;
+        const halfWidth = width / 2;
+        const halfHeight = height / 2;
+        const positions = skillData.config?.position;
 
-        // AABB 碰撞偵測 (XZ 平面)
-        const isInsideX = charPos.x >= (attackPos.x - halfSize) && charPos.x <= (attackPos.x + halfSize);
-        const isInsideZ = charPos.z >= (attackPos.z - halfSize) && charPos.z <= (attackPos.z + halfSize);
+        if (Array.isArray(positions)) {
+            return positions.some(pos => {
+                const isInsideX = charPos.x >= (pos.x - halfWidth) && charPos.x <= (pos.x + halfWidth);
+                const isInsideZ = charPos.z >= (pos.z - halfHeight) && charPos.z <= (pos.z + halfHeight);
+                return isInsideX && isInsideZ;
+            });
+        }
 
+        const isInsideX = charPos.x >= (attackPos.x - halfWidth) && charPos.x <= (attackPos.x + halfWidth);
+        const isInsideZ = charPos.z >= (pos.z - halfHeight) && charPos.z <= (pos.z + halfHeight);
         return isInsideX && isInsideZ;
     }
 }

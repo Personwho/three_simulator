@@ -10,9 +10,11 @@ export class TelegraphManager {
     createTelegraph(skillInstance, position, onComplete, targets = []) {
         const instanceId = `tg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`; // 生成唯一 ID
         const mesh = skillInstance.logic.createTelegraphMesh(skillInstance.data);
-        mesh.position.set(position.x, position.y + 0.01, position.z);
-
-        if (targets.length > 0) {
+        const isArrayPos = Array.isArray(position);
+        const actualPos = isArrayPos ? position[0] : position;
+        
+        mesh.position.set(actualPos.x, actualPos.y + 0.01, actualPos.z);
+        if (!isArrayPos && targets.length > 0) {
             targets.forEach(target => {
                 const targetPos = target.model.position;
                 mesh.lookAt(targetPos.x, mesh.position.y, targetPos.z);
@@ -59,6 +61,34 @@ export class TelegraphManager {
         return arrow;
     }
 
+    _setMeshProperties(obj, properties) {
+        if (properties.visible !== undefined) {
+            obj.visible = properties.visible;
+        }
+        
+        if (obj.material) {
+            if (properties.opacity !== undefined) {
+                obj.material.opacity = properties.opacity;
+                obj.material.transparent = true;
+            }
+            // 如果有指定單一顏色，則套用
+            if (properties.color !== undefined) {
+                obj.material.color.setHex(properties.color);
+            }
+        }
+        
+        // 核心修正：如果提供的是顏色陣列，則對應到子物件
+        if (obj.children && obj.children.length > 0) {
+            obj.children.forEach((child, index) => {
+                const childProps = { ...properties };
+                if (Array.isArray(properties.colors) && properties.colors[index] !== undefined) {
+                    childProps.color = properties.colors[index];
+                }
+                this._setMeshProperties(child, childProps);
+            });
+        }
+    }
+
     update() {
         const now = Date.now();
         this.activeTelegraphs = this.activeTelegraphs.filter(t => {
@@ -96,8 +126,12 @@ export class TelegraphManager {
                     t.state = 'active';
                     t.startTime = now;
                     // 施放時變更透明度
-                    t.mesh.material.opacity = 0.5;
-                    t.mesh.material.transparent = true;
+                    const config = t.skillInstance.data.config;
+                    this._setMeshProperties(t.mesh, { 
+                        color: config?.active_color || 0xff0000, // 預設色
+                        colors: config?.active_colors,           // 傳遞顏色陣列
+                        opacity: 0.5 
+                    });
                     this._clearIndicators(t);
                 }
                 return true; // 繼續保留在陣列中
@@ -126,11 +160,12 @@ export class TelegraphManager {
                     }
                     t.state = 'active';
                     t.startTime = now;
-                    t.mesh.visible = true;
-                    // 施放時變更顏色與透明度
-                    t.mesh.material.color.setHex(0xff0000);
-                    t.mesh.material.opacity = 0.5;
-                    t.mesh.material.transparent = true;
+                    const attackColor = t.skillInstance.data.config?.active_color || 0xff0000;
+                    this._setMeshProperties(t.mesh, { 
+                        visible: true, 
+                        color: attackColor, 
+                        opacity: 0.5 
+                    });
                 }
                 return true;
             }

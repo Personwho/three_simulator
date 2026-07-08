@@ -3,7 +3,7 @@
         "players": [
             {
                 "name": "MT",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "T",
                 "scale": 0.3,
                 "default_position": {
@@ -73,7 +73,7 @@
             },
             {
                 "name": "H1",
-                "model": "../models/Lalafell.glb",
+                "model": "models/Lalafell.glb",
                 "role": "H",
                 "scale": 0.3,
                 "default_position": {

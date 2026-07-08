@@ -116,7 +116,8 @@ export class SnapTwistDropTheNeedleSkill extends BaseSkill {
                             width: attackCfg.width, 
                             height: attackCfg.height,
                             angle_start: attackCfg.angle_start,
-                            color: attackCfg.color 
+                            color: attackCfg.color,
+                            active_color: attackCfg.color 
                         }
                     },
                     logic: this
