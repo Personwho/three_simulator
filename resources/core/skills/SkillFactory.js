@@ -6,6 +6,10 @@ import { SnapTwistDropTheNeedleSkill } from './SnapTwistDropTheNeedleSkill.js';
 
 export class SkillFactory {
     static create(skillData) {
+        if (!skillData || !skillData.type) {
+            return null;
+        }
+        
         switch (skillData.type) {
             case 'ConeSkill': return new ConeSkill(skillData);
             case 'CircleSkill': return new CircleSkill(skillData);

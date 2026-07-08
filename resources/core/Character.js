@@ -43,6 +43,8 @@ export class Character {
                 (config.rotation.z || 0) * (Math.PI / 180)
             );
         }
+
+        this.model.name = config.name || "player";
     }
 
     addStatusEffect(effect) {

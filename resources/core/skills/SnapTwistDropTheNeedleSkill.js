@@ -95,7 +95,7 @@ export class SnapTwistDropTheNeedleSkill extends BaseSkill {
 
         // 3. 依序施放預警
         sequence.forEach((attackCfg, i) => {
-            const interval = config.interval || 0.5;
+            const interval = 2 / repeatCount;
             // 這裡的 delay 應從總讀條結束後開始計算，或根據您的需求與讀條同步
             // 假設 delay 是相對於技能開始的時間
             let delay = totalDuration + (i * interval);
@@ -103,7 +103,7 @@ export class SnapTwistDropTheNeedleSkill extends BaseSkill {
                 delay += 1.0;
             }
 
-            setTimeout(() => {
+            monster.setTimeout(() => {
                 const targetAngle = (attackCfg.angle_start || 0) * (Math.PI / 180);
 
                 const tempSkill = {
@@ -173,7 +173,7 @@ export class SnapTwistDropTheNeedleSkill extends BaseSkill {
         const startTime = Date.now();
         const animate = () => {
             const elapsed = (Date.now() - startTime) / 1000;
-            if (elapsed > duration) {
+            if (elapsed > duration || !animGroup.parent) {
                 telegraphManager.scene.remove(animGroup);
                 blocks.forEach(b => b.mesh.material.dispose());
                 boxGeo.dispose();

@@ -8,6 +8,7 @@ import { Monster } from './Monster.js';
 import { Tool } from './Tool.js';
 import { ActionBar } from './ActionBar.js';
 import { SkillFactory } from './skills/SkillFactory.js';
+import { toTrianglesDrawMode } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 class SceneManager {
     constructor() {
@@ -145,7 +146,11 @@ class SceneManager {
 
         for (const f of this.sceneData.floor) {
             const tiles = await Floor.create(f, this.loader);
-            tiles.forEach(tile => { this.scene.add(tile); this.groundObjects.push(tile); });
+            tiles.forEach(tile => { 
+                tile.name = "floor_default";
+                this.scene.add(tile); 
+                this.groundObjects.push(tile); 
+            });
         }
 
         if (this.sceneData.teams) {
@@ -193,19 +198,23 @@ class SceneManager {
         // 1. 強大的基礎環境光：這是解決「角色太暗」最直接的方法
         // 調高至 3.0 以上，強制拉高所有物件的最低亮度
         const ambient = new THREE.AmbientLight(0xffffff, 10);
+        ambient.name = "default";
         this.scene.add(ambient);
 
         // 2. 半球光：提供自然的冷暖色調過渡 (天空白色，地面淺灰色)
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0x888888, 3);
+        hemiLight.name = "default";
         this.scene.add(hemiLight);
 
         // 3. 主平行光：從上方垂直照射，建立頂部的亮面
         const mainLight = new THREE.DirectionalLight(0xffffff, 3.0);
+        mainLight.name = "default";
         mainLight.position.set(0, 20, 0);
         this.scene.add(mainLight);
 
         // 4. 正面填補光：確保臉部永遠是亮的
         const frontLight = new THREE.DirectionalLight(0xffffff, 4.0);
+        frontLight.name = "default";
         frontLight.position.set(0, 10, 20); // 從相機方向往回照
         this.scene.add(frontLight);
 
@@ -343,8 +352,12 @@ class SceneManager {
 
     reset(selectedPlayerName = null) {
         this.isGameRunning = false;
+        this.gameStartTime = 0;
+        this.monsterInstances.forEach(m => m.reset());
         this.lastStatusFingerprint = ""; // 確保 UI 指紋在重置時被清空
         this._addLog("遊戲重置", "text-gray-400");
+
+        if (!this.scene) return; 
 
         this.characters.forEach(char => {
             // 清除該角色的按鍵緩存，防止切換時角色自動亂跑
@@ -399,11 +412,8 @@ class SceneManager {
 
         for (let i = this.scene.children.length - 1; i >= 0; i--) {
             const child = this.scene.children[i];
-            if (child.isMesh && child.material && child.material.transparent === true) {
-                // 針對預警材質特徵進行移除
-                if (child.geometry.type === 'PlaneGeometry' || child.geometry.type === 'CircleGeometry') {
-                    this.scene.remove(child);
-                }
+            if(child.name === "") {
+                this.scene.remove(child);
             }
         }
 
@@ -430,11 +440,12 @@ class SceneManager {
         this.previousTime = currentTime * 0.001;
 
         const activeGround = this.groundObjects.filter(f => !f.userData.isDisappeared);
+        let elapsed = 0;
 
         this.characters.forEach(char => char.updateStatusEffects());
 
         if (this.isGameRunning) {
-            const elapsed = (Date.now() - this.gameStartTime) / 1000;
+            elapsed = (Date.now() - this.gameStartTime) / 1000;
             this._checkInteractions(dt, activeGround);
             this.telegraphManager.update();
             this.monsterInstances.forEach(monster => {
@@ -466,7 +477,7 @@ class SceneManager {
         if (this.controlledCharacter) {
             const oldPos = this.controlledCharacter.model.position.clone();
             this.controlledCharacter.moveByPlayer(this.controls, activeGround, dt);
-            this._updateUI(this.controlledCharacter.model.position);
+            this._updateUI(this.controlledCharacter.model.position, elapsed);
             this.actionBar.update(); // 更新 CD 顯示
             this._updateStatusUI(this.controlledCharacter.statusEffects);
             const delta = this.controlledCharacter.model.position.clone().sub(oldPos);
@@ -562,9 +573,13 @@ class SceneManager {
         this.groundObjects.forEach(f => Floor.updateMechanics(f, dt));
     }
 
-    _updateUI(pos) {
+    _updateUI(pos, elapsed = 0) {
         const el = document.getElementById('coord-display');
-        if (el) el.textContent = `X: ${(pos.x * -1).toFixed(2)}, Z: ${pos.z.toFixed(2)}`;
+        if (el) {
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = Math.floor(elapsed % 60).toString().padStart(2, '0');
+            el.textContent = `X: ${(pos.x * -1).toFixed(2)}, Z: ${pos.z.toFixed(2)}, Time: ${minutes}:${seconds}`;
+        }
     }
 
     _disposeScene() {

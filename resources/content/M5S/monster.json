@@ -612,23 +612,51 @@
                 "config": {
                     "angle": 45,
                     "radius": 15,
-                    "target_role": "T",
-                    "target_count": 2
+                    "targets": [
+                        {"role": ["T"], "count": 2}
+                    ]
                 }
             },
             {
-                "name": "放入B面",
-                "type": "LineSkill",
+                "name": "AB面隨機順序",
+                "pattern": "shuffled_sequence",
                 "time": 22,
-                "cast_time": 4,
-                "opacity": 0,
                 "config": {
-                    "width": 1.6,
-                    "length": 15,
-                    "wait_time": 13.5,
-                    "target_role": "H",
-                    "target_count": 2,
-                    "target_opacity": 0
+                    "times": [22, 42],
+                    "skills": [
+                        {
+                            "name": "放入A面",
+                            "type": "ConeSkill",
+                            "cast_time": 4,
+                            "opacity": 0,
+                            "config": {
+                                "angle": 45,
+                                "radius": 15,
+                                "wait_time": 12,
+                                "targets": [
+                                    {"role": ["T"], "count": 1},
+                                    {"role": ["H"], "count": 1},
+                                    {"role": ["rD", "mD"], "count": 1}
+                                ],
+                                "target_opacity": 0
+                            }
+                        },
+                        {
+                            "name": "放入B面",
+                            "type": "LineSkill",
+                            "cast_time": 4,
+                            "opacity": 0,
+                            "config": {
+                                "width": 1.6,
+                                "length": 15,
+                                "wait_time": 12,
+                                "targets": [
+                                    {"role": ["H"], "count": 2}
+                                ],
+                                "target_opacity": 0
+                            }
+                        }
+                    ]
                 }
             },
             {
@@ -642,11 +670,42 @@
                 "config": {
                     "repeat_min": 2,
                     "repeat_max": 4,
-                    "interval": 1,
                     "groups": [
                         {"width": 15, "height": 15, "angle_start": 90},
                         {"width": 15, "height": 15, "angle_start": 270}
                     ]
+                }
+            },
+            {
+                "name": "連指向、定格&播放",
+                "type": "SnapTwistDropTheNeedleSkill",
+                "pattern": "sequence",
+                "time": 48,
+                "cast_time": 5,
+                "duration": 0.5,
+                "opacity": 0,
+                "config": {
+                    "repeat_min": 2,
+                    "repeat_max": 4,
+                    "groups": [
+                        {"width": 15, "height": 15, "angle_start": 90},
+                        {"width": 15, "height": 15, "angle_start": 270}
+                    ]
+                }
+            },
+            {
+                "name": "歡慶時刻",
+                "type": "CircleSkill",
+                "time": 59,
+                "cast_time": 5,
+                "opacity": 0,
+                "config": {
+                    "position": {
+                        "x": 4.5,
+                        "y": 10,
+                        "z": 4.5
+                    },
+                    "radius": 15
                 }
             }
         ]
