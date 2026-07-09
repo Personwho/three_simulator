@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BaseSkill } from './BaseSkill.js';
+import { BaseSkill } from '../BaseSkill.js';
 
 export class FunkyFloorSkill extends BaseSkill {
     constructor(skillData) {
@@ -62,7 +62,7 @@ export class FunkyFloorSkill extends BaseSkill {
         return isInsideX && isInsideZ;
     }
 
-    runSequence(monster, telegraphManager, onAttack, addLog) {
+    runSequence(monster, telegraphManager, onAttack, allCharacters, addLog) {
         const config = this.data.config;
         const repeatCount = config.repeat_count || 1;
         

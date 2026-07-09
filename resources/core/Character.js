@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { StatusFactory } from './status/StatusFactory.js';
 
 export class Character {
     pathIndex = 0; // 當前路徑索引
@@ -47,38 +48,46 @@ export class Character {
         this.model.name = config.name || "player";
     }
 
-    addStatusEffect(effect) {
+    addStatusEffect(effectData) {
         // 尋找是否已有同名狀態
-        const existing = this.statusEffects.find(e => e.name === effect.name);
+        const existingIndex = this.statusEffects.findIndex(e => e.name === effectData.name);
 
-        if (existing) {
+        if (existingIndex !== -1) {
             // 如果已存在，僅更新開始時間（重新計時），不新增物件
-            existing.startTime = Date.now();
-            existing.duration = effect.duration; // 確保持續時間同步
+            this.statusEffects[existingIndex].startTime = Date.now();
+            this.statusEffects[existingIndex].duration = effectData.duration;
             return;
         }
 
         // 不存在才新增
-        this.statusEffects.push({ ...effect, startTime: Date.now() });
+        const effect = StatusFactory.create(this, effectData);
+        this.statusEffects.push(effect);
     }
 
-    updateStatusEffects() {
-        const now = Date.now();
-        // 過濾掉時間已到的狀態
-        this.statusEffects = this.statusEffects.filter(e => (now - e.startTime) < e.duration * 1000);
-
-        let buffMultiplier = 1.0;
-        this.statusEffects.filter(e => e.isBuff && e.type === 'speed').forEach(e => {
-            buffMultiplier += (e.value - 1);
+    updateStatusEffects(deltaTime, telegraphManager, addLog) {
+        // 1. 執行更新與過期邏輯
+        this.statusEffects.forEach(effect => {
+            effect.update(deltaTime);
+            if (effect.isExpired) {
+                effect.onExpire(telegraphManager, addLog);
+            }
         });
 
-        let debuffMultiplier = 1.0;
-        const slowEffects = this.statusEffects.filter(e => !e.isBuff && e.type === 'slow');
-        if (slowEffects.length > 0) {
-            debuffMultiplier = Math.min(...slowEffects.map(e => e.value));
-        }
+        // 2. 移除過期狀態
+        this.statusEffects = this.statusEffects.filter(e => !e.isExpired);
 
-        this.currentMoveSpeed = this.baseMoveSpeed * buffMultiplier * debuffMultiplier;
+        // 3. 計算最終速度
+        const stats = {
+            buffMultiplier: 1.0,
+            debuffMultiplier: 1.0
+        };
+
+        // 核心修正：讓每個狀態自行決定如何修改 stats 物件
+        this.statusEffects.forEach(effect => {
+            effect.applyEffect(stats);
+        });
+
+        this.currentMoveSpeed = this.baseMoveSpeed * stats.buffMultiplier * stats.debuffMultiplier;
     }
 
     // 玩家移動
@@ -228,7 +237,7 @@ export class Character {
         }
 
         const now = Date.now();
-        const canJump = !this.isInAir && isOnAnyGround && (now - this.lastLandTime) > 100;
+        const canJump = this.currentMoveSpeed > 0 && !this.isInAir && isOnAnyGround && (now - this.lastLandTime) > 100;
 
         // 處理相機旋轉 (方向鍵功能同滑鼠右鍵) ---
         if (controls) {

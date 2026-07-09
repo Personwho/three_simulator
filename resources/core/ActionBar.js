@@ -8,7 +8,7 @@ export class ActionBar {
                 cd: 20,
                 lastUsed: 0,
                 // 將技能效果數據化
-                effect: { name: "衝刺", type: "speed", value: 1.4, duration: 10, isBuff: true }
+                effect: { name: "衝刺", value: 1.4, duration: 10, isBuff: true }
             }
         };
         this.slots = {}; // 用於快取 DOM 節點

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BaseSkill } from './BaseSkill.js';
+import { BaseSkill } from '../BaseSkill.js';
 
 export class SnapTwistDropTheNeedleSkill extends BaseSkill {
     createTelegraphMesh(skillData) {
@@ -60,7 +60,7 @@ export class SnapTwistDropTheNeedleSkill extends BaseSkill {
      * @param {Function} onAttack 命中回調
      * @param {Function} addLog 日誌回調
      */
-    runSequence(monster, telegraphManager, onAttack, addLog) {
+    runSequence(monster, telegraphManager, onAttack, allCharacters, addLog) {
         const config = this.config.config;
         const groups = config.groups;
         if (!groups || groups.length < 2) return;

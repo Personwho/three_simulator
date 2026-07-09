@@ -137,72 +137,7 @@ export class Monster {
             this.skills.forEach(skill => {
                 if (!skill.triggered && elapsedTime >= (skill.data.time || 0)) {
                     skill.triggered = true;
-
-                    // 處理隨機不重複序列
-                    if (skill.data.pattern === "shuffled_sequence") {
-                        this._handleShuffledSequence(skill.data, telegraphManager, onAttack, allCharacters, addLog);
-                        return;
-                    }
-
-                    // 新增：處理隨機抽一個施放
-                    if (skill.data.pattern === "random_single") {
-                        this._handleRandomSingle(skill.data, telegraphManager, onAttack, allCharacters, addLog);
-                        return;
-                    }
-                    
-                    // 處理序列技能
-                    if (skill.logic.runSequence) {
-                        skill.logic.runSequence(this, telegraphManager, onAttack, addLog);
-                        return;
-                    }
-
-                    // 新增：處理讀條日誌 (如果不跳過日誌)
-                    const noLog = skill.data.no_log || skill.data.config?.no_log;
-                    if (!noLog) {
-                        addLog(`${this.config.name} 開始讀條: ${skill.data.name}`, "text-yellow-100 opacity-80");
-                    }
-
-                    // 設定讀條資訊供 UI 顯示
-                    if (skill.data.cast_time > 0) {
-                        this.activeCast = {
-                            name: skill.data.name,
-                            startTime: Date.now(),
-                            duration: skill.data.cast_time
-                        };
-                    }
-
-                    // 1. 角色篩選與選取邏輯
-                    let targets = [];
-                    const cfg = skill.data.config;
-                    if (cfg && cfg.targets && Array.isArray(cfg.targets)) {
-                        cfg.targets.forEach(group => {
-                            // 從 allCharacters 中篩選符合 group.role 陣列中任一職能的角色
-                            const groupCandidates = allCharacters.filter(c => 
-                                Array.isArray(group.role) ? group.role.includes(c.role) : c.role === group.role
-                            );
-                            
-                            const count = parseInt(group.count) || 1;
-                            // 洗牌並依照 count 取選
-                            const selected = groupCandidates.sort(() => 0.5 - Math.random()).slice(0, count);
-                            targets.push(...selected);
-                        });
-                    }
-
-                    // 修正點：優先讀取 JSON 中定義的 position，若無才使用怪物目前的座標
-                    const targetPos = (cfg && cfg.position) ? 
-                        cfg.position : 
-                        { x: this.model.position.x, y: this.model.position.y, z: this.model.position.z };
-
-                    // --- 核心修正：如果有多個目標，為每個目標獨立產生一個預警區 ---
-                    if (targets.length > 0) {
-                        targets.forEach(t => {
-                            // 每個預警區只追蹤一個特定目標 [t]
-                            telegraphManager.createTelegraph(skill, targetPos, onAttack, [t]);
-                        });
-                    } else {
-                        // 若無目標（例如圓形 AOE），則產生一個不帶目標的預警區
-                        telegraphManager.createTelegraph(skill, targetPos, onAttack, []);
-                    }
+                    this._executeSingleSkill(skill, telegraphManager, onAttack, allCharacters, addLog);
                 }
             });
         }
@@ -258,7 +193,6 @@ export class Monster {
             const delaySec = triggerTime - (skillData.time || 0);
 
             this.setTimeout(() => {
-                // 修正：必須包含 logic，否則 SkillFactory 會對 undefined 報錯
                 const skillInstance = {
                     data: subData,
                     logic: SkillFactory.create(subData)
@@ -272,40 +206,60 @@ export class Monster {
      * 內部輔助：執行單個技能的邏輯 (抽離出來以便複用)
      */
     _executeSingleSkill(skill, telegraphManager, onAttack, allCharacters, addLog) {
-        const noLog = skill.data.no_log || skill.data.config?.no_log;
-        if (!noLog) {
-            addLog(`${this.config.name} 施放: ${skill.data.name}`, "text-yellow-100 opacity-80");
+        const data = skill.data;
+        const cfg = data.config || {};
+
+        // 1. 處理特殊模式 (Dispatching)
+        if (data.pattern === "shuffled_sequence") {
+            this._handleShuffledSequence(data, telegraphManager, onAttack, allCharacters, addLog);
+            return;
+        }
+        if (data.pattern === "random_single") {
+            this._handleRandomSingle(data, telegraphManager, onAttack, allCharacters, addLog);
+            return;
         }
 
-        if (skill.data.cast_time > 0) {
+        // 2. 處理序列型/複雜邏輯技能
+        if (skill.logic.runSequence) {
+            skill.logic.runSequence(this, telegraphManager, onAttack, allCharacters, addLog);
+            return;
+        }
+
+        // 3. 標準施放程序 (日誌與讀條)
+        if (!data.no_log && !cfg.no_log) {
+            addLog(`${this.config.name} ${data.cast_time > 0 ? '開始讀條' : '施放'}: ${data.name}`, "text-yellow-100 opacity-80");
+        }
+
+        if (data.cast_time > 0) {
             this.activeCast = {
-                name: skill.data.name,
+                name: data.name,
                 startTime: Date.now(),
-                duration: skill.data.cast_time
+                duration: data.cast_time
             };
         }
 
+        // 4. 目標選取
         let targets = [];
-        const cfg = skill.data.config;
-        if (cfg && cfg.targets && Array.isArray(cfg.targets)) {
+        if (cfg.targets && Array.isArray(cfg.targets)) {
             cfg.targets.forEach(group => {
-                const groupCandidates = allCharacters.filter(c => 
+                const candidates = allCharacters.filter(c => 
                     Array.isArray(group.role) ? group.role.includes(c.role) : c.role === group.role
                 );
                 const count = parseInt(group.count) || 1;
-                const selected = groupCandidates.sort(() => 0.5 - Math.random()).slice(0, count);
+                const selected = candidates.sort(() => 0.5 - Math.random()).slice(0, count);
                 targets.push(...selected);
             });
         }
-        
-        const targetPos = (cfg && cfg.position) ? 
-            cfg.position : 
-            { x: this.model.position.x, y: this.model.position.y, z: this.model.position.z };
+
+        // 5. 決定位置並產生預警
+        const targetPos = cfg.position || { 
+            x: this.model.position.x, 
+            y: this.model.position.y, 
+            z: this.model.position.z 
+        };
 
         if (targets.length > 0) {
-            targets.forEach(t => {
-                telegraphManager.createTelegraph(skill, targetPos, onAttack, [t]);
-            });
+            targets.forEach(t => telegraphManager.createTelegraph(skill, targetPos, onAttack, [t]));
         } else {
             telegraphManager.createTelegraph(skill, targetPos, onAttack, []);
         }

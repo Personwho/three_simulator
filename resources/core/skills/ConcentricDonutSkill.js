@@ -49,7 +49,7 @@ export class ConcentricDonutSkill extends BaseSkill {
         return dist >= inner && dist <= outer;
     }
 
-    runSequence(monster, telegraphManager, onAttack, addLog) {
+    runSequence(monster, telegraphManager, onAttack, allCharacters, addLog) {
         const config = this.data.config;
         const innerRadius = config.inner_radius || 3;
         const outerRadius = config.outer_radius || 10;

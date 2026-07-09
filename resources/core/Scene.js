@@ -108,38 +108,6 @@ class SceneManager {
     }
 
     async _setupObjects(selectedPlayerName) {
-        // 1. 建立資源池容器 (如果不存在)
-        let pool = document.getElementById('status-icon-pool');
-        if (!pool) {
-            pool = document.createElement('div');
-            pool.id = 'status-icon-pool';
-            pool.style.display = 'none'; // 隱藏但不移除 DOM
-            document.body.appendChild(pool);
-        }
-        pool.innerHTML = ''; // 清空舊的
-
-        // 2. 收集所有可能的狀態定義 (衝刺 + 怪物技能)
-        const statusConfigs = [{ name: '衝刺', icon: 'assets/icons/衝刺.png' }];
-        this.sceneData.monsters.forEach(m => {
-            if (m.skills) {
-                m.skills.forEach(s => {
-                    // 注意這裡的路徑：s 是原始 JSON 定義，debuff 在 config 裡面
-                    const debuff = s.config?.debuff;
-                    if (debuff && debuff.name && debuff.icon) {
-                        statusConfigs.push({ name: debuff.name, icon: debuff.icon });
-                    }
-                });
-            }
-        });
-
-        // 3. 預先建立 img 標籤並放入池中，強制瀏覽器載入並解碼
-        statusConfigs.forEach(cfg => {
-            const img = new Image();
-            img.dataset.statusName = cfg.name;
-            img.src = cfg.icon;
-            pool.appendChild(img);
-        });
-
         this.groundObjects = [];
         this.characters = [];
         this.monsterInstances = [];
@@ -442,7 +410,9 @@ class SceneManager {
         const activeGround = this.groundObjects.filter(f => !f.userData.isDisappeared);
         let elapsed = 0;
 
-        this.characters.forEach(char => char.updateStatusEffects());
+        this.characters.forEach(char => {
+            char.updateStatusEffects(dt, this.telegraphManager, (msg, color) => this._addLog(msg, color));
+        });
 
         if (this.isGameRunning) {
             elapsed = (Date.now() - this.gameStartTime) / 1000;
@@ -458,7 +428,9 @@ class SceneManager {
                     (msg, cls) => this._addLog(msg, cls) // 傳入日誌回調
                 );
             });
+
             this.characters.forEach(char => {
+                char.updateStatusEffects(dt, this.telegraphManager, (msg, color) => this._addLog(msg, color));
                 if (!char.isPlayer) char.moveByPath(char.pathData, this.groundObjects, dt);
             });
             this._updateMonsterUI();
@@ -531,8 +503,7 @@ class SceneManager {
 
                 let el = document.getElementById(id);
                 if (!el) {
-                    const poolImg = document.querySelector(`#status-icon-pool img[data-status-name="${e.name}"]`);
-                    const imgHtml = poolImg ? `<img src="${poolImg.src}" class="w-6 h-6 object-contain">` : '';
+                    const imgHtml = e.icon ? `<img src="${e.icon}" class="w-6 h-6 object-contain">` : '';
 
                     const statusItem = document.createElement('div');
                     statusItem.id = id;
