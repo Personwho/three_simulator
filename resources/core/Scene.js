@@ -321,7 +321,6 @@ class SceneManager {
     reset(selectedPlayerName = null) {
         this.isGameRunning = false;
         this.gameStartTime = 0;
-        this.monsterInstances.forEach(m => m.reset());
         this.lastStatusFingerprint = ""; // 確保 UI 指紋在重置時被清空
         this._addLog("遊戲重置", "text-gray-400");
 
@@ -354,10 +353,8 @@ class SceneManager {
             char.pathIndex = 0;
             char.isWaiting = false;
             char.isPathFinished = false;
-            char.statusEffects = [];
             char.velocityY = 0; // 重置重力速度
             char.statusEffects = []; // 清空 Buff/Debuff 陣列
-            char.velocityY = 0;
         });
 
         // 重置技能組冷卻
@@ -398,8 +395,6 @@ class SceneManager {
             f.userData.standingTimer = 0;
             if (f.material && f.userData.originalColor) f.material.color.setHex(f.userData.originalColor);
         });
-        this.telegraphManager.activeTelegraphs.forEach(t => this.scene.remove(t.mesh));
-        this.telegraphManager.activeTelegraphs = [];
     }
 
     animate = (currentTime) => {
@@ -409,10 +404,6 @@ class SceneManager {
 
         const activeGround = this.groundObjects.filter(f => !f.userData.isDisappeared);
         let elapsed = 0;
-
-        this.characters.forEach(char => {
-            char.updateStatusEffects(dt, this.telegraphManager, (msg, color) => this._addLog(msg, color));
-        });
 
         if (this.isGameRunning) {
             elapsed = (Date.now() - this.gameStartTime) / 1000;
@@ -435,14 +426,12 @@ class SceneManager {
             });
             this._updateMonsterUI();
         } else {
-            this.monsterInstances.forEach(monster => { 
-                monster.update(
-                    0, 
-                    false, 
-                    null, 
-                    null, 
-                    (msg, cls) => this._addLog(msg, cls)
-                );
+            this.monsterInstances.forEach(monster => {
+                monster.update(0, false, null, null, this.characters, null);
+            });
+
+            this.characters.forEach(char => {
+                char.updateStatusEffects(dt, null, null);
             });
         }
 
@@ -554,9 +543,16 @@ class SceneManager {
     }
 
     _disposeScene() {
+        if (!this.scene) return;
         this.scene.traverse(obj => {
             if (obj.geometry) obj.geometry.dispose();
-            if (obj.material) obj.material.dispose();
+            if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(m => m.dispose());
+                } else {
+                    obj.material.dispose();
+                }
+            }
         });
     }
 

@@ -39,6 +39,21 @@ export class TelegraphManager {
         const castTime = (skillInstance.data.cast_time || 0) * 1000;
         const duration = (skillInstance.data.duration || 0.5) * 1000;
 
+        // 修正：當無讀條時間時，立即套用施放判定時的活動顏色（預設紅色）及不透明度
+        if (castTime === 0) {
+            const config = skillInstance.data.config;
+            const properties = { opacity: config?.opacity ?? 0.5 };
+            
+            if (config?.active_color !== undefined) {
+                properties.color = config.active_color;
+            }
+            if (config?.active_colors !== undefined) {
+                properties.colors = config.active_colors;
+            }
+            
+            this._setMeshProperties(mesh, properties);
+        }
+
         this.activeTelegraphs.push({
             mesh, skillInstance, position, indicators, instanceId, // 存入 ID
             startTime: Date.now(),

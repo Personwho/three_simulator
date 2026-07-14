@@ -359,13 +359,19 @@
                 "type": "ConcentricDonutSkill",
                 "time": 84.5,
                 "cast_time": 5,
+                "opacity": 0,
                 "config": {
                     "wait_time": 0.5,
-                    "inner_radius": 1.5,
-                    "outer_radius": 15,
                     "interval": 1.5,
-                    "inner_first_name": "外翻內轉",
-                    "outer_first_name": "內翻外轉"
+                    "repeat": 1,
+                    "random": true,
+                    "steel_inner_radius": 1.41421356,
+                    "steel_outer_radius": 0,
+                    "donut_inner_radius": 1,
+                    "donut_outer_radius": 15,
+                    "duration": 0.5,
+                    "inner_first_name": "內翻外轉",
+                    "outer_first_name": "外翻內轉"
                 }
             },
             {
@@ -453,6 +459,27 @@
                     "targets": [
                         {"role": ["T"], "count": 2}
                     ]
+                }
+            },
+            {
+                "name": "登天夜狂熱-鋼鐵圓環依序施放",
+                "type": "ConcentricDonutSkill",
+                "time": 149.5,
+                "cast_time": 4,
+                "no_log": true,
+                "config": {
+                    "wait_time": 0.5,
+                    "interval": 2.5,
+                    "repeat": 4,
+                    "random": false,
+                    "order": [true, false, true, false],
+                    "steel_inner_radius": 1.41421356,
+                    "steel_outer_radius": 0,
+                    "donut_inner_radius": 1,
+                    "donut_outer_radius": 15,
+                    "hit_duration": 0.5,
+                    "inner_first_name": "登天夜狂熱",
+                    "outer_first_name": "登天夜狂熱"
                 }
             }
         ]

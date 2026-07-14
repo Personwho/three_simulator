@@ -7,21 +7,21 @@ export class ConcentricDonutSkill extends BaseSkill {
         this.data = skillData;
     }
 
-    // 雖然 runSequence 會處理主要的 Mesh，但為了相容性仍保留此方法
     createTelegraphMesh(skillData) {
-        const inner = skillData.config?.inner_radius || 3;
-        const outer = skillData.config?.outer_radius || 10;
-        const isInnerPart = skillData.config?.is_inner_part;
+        const cfg        = skillData.config || {};
+        const innerR     = cfg.inner_radius ?? 3;
+        const outerR     = cfg.outer_radius ?? 10;
+        const isInner    = cfg.is_inner_part;
+        const opacity    = this.data.opacity !== undefined ? this.data.opacity : 0.5;
 
-        // 根據目前是哪一部分產生對應的幾何體
-        const geometry = isInnerPart 
-            ? new THREE.CircleGeometry(inner, 64) 
-            : new THREE.RingGeometry(inner, outer, 64);
+        const geometry = isInner
+            ? new THREE.CircleGeometry(innerR, 64)
+            : new THREE.RingGeometry(innerR, outerR, 64);
 
         const material = new THREE.MeshBasicMaterial({
-            color: skillData.config?.color || 0xff0000,
+            color: cfg.color,
             transparent: true,
-            opacity: 0.5,
+            opacity: opacity,
             side: THREE.DoubleSide,
             depthWrite: false,
             polygonOffset: true,
@@ -35,70 +35,101 @@ export class ConcentricDonutSkill extends BaseSkill {
     }
 
     checkHit(charPos, attackPos, attackRotationY, skillData) {
-        const inner = skillData.config?.inner_radius || 3;
-        const outer = skillData.config?.outer_radius || 10;
-        const isInnerPart = skillData.config?.is_inner_part;
+        const cfg    = skillData.config || {};
+        const innerR = cfg.inner_radius ?? 3;
+        const outerR = cfg.outer_radius ?? 10;
+        const isInner = cfg.is_inner_part;
 
-        const dx = charPos.x - attackPos.x;
-        const dz = charPos.z - attackPos.z;
+        const dx   = charPos.x - attackPos.x;
+        const dz   = charPos.z - attackPos.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
 
-        // 內圓判定：距離小於內半徑
-        if (isInnerPart) return dist <= inner;
-        // 外圓判定：距離在內外半徑之間
-        return dist >= inner && dist <= outer;
+        return isInner
+            ? dist <= innerR
+            : dist >= innerR && dist <= outerR;
     }
 
     runSequence(monster, telegraphManager, onAttack, allCharacters, addLog) {
-        const config = this.data.config;
-        const innerRadius = config.inner_radius || 3;
-        const outerRadius = config.outer_radius || 10;
-        const interval = (config.interval || 1.5) * 1000;
+        const cfg      = this.data.config || {};
         const castTime = (this.data.cast_time || 3) * 1000;
+        const interval = (cfg.interval || 1.5) * 1000;
+        const repeat   = cfg.repeat   || 1;     // 重複次數
+        const random   = cfg.random   !== false; // 預設 true，false 則照 order 指定
+        const opacity = this.data.opacity !== undefined ? this.data.opacity : 0.5;
 
-        // 核心修正：從 config 讀取自定義名稱，若無則使用預設值
-        const innerFirstName = config.inner_first_name || "爆炸：由內而外";
-        const outerFirstName = config.outer_first_name || "爆炸：由外而內";
+        // ── 半徑設定 (鋼鐵/月環可各自設定) ──────────────────────
+        const steelInner  = cfg.steel_inner_radius  ?? cfg.inner_radius ?? Math.SQRT2;
+        const steelOuter  = cfg.steel_outer_radius  ?? cfg.outer_radius ?? 15;
+        const donutInner  = cfg.donut_inner_radius  ?? cfg.inner_radius ?? 1;
+        const donutOuter  = cfg.donut_outer_radius  ?? cfg.outer_radius ?? 15;
 
-        // 隨機決定順序
-        const isInnerFirst = Math.random() > 0.5;
-        const seqName = isInnerFirst ? innerFirstName : outerFirstName;
+        // ── 名稱設定 ──────────────────────────────────────────────
+        const innerFirstName = cfg.inner_first_name || "鋼鐵優先";
+        const outerFirstName = cfg.outer_first_name || "月環優先";
 
-        if (addLog) addLog(`${monster.config.name} 開始施放 ${seqName}`, "text-yellow-400");
-        
+        // ── 建立每輪的順序清單 ────────────────────────────────────
+        // order 陣列：true = 鋼鐵先、false = 月環先
+        // 若 cfg.order 有指定 (如 [true, false, true])，則直接使用；否則每輪隨機
+        const orderList = cfg.order
+            ? cfg.order.slice(0, repeat)
+            : Array.from({ length: repeat }, () => random ? Math.random() > 0.5 : true);
+
+        // 第一輪決定名稱用於讀條顯示
+        const seqName = orderList[0] ? innerFirstName : outerFirstName;
+        if (!this.data.no_log) addLog(`${monster.config.name} 開始施放 ${seqName}`, "text-yellow-400");
+
         monster.activeCast = {
             name: seqName,
             startTime: Date.now(),
             duration: this.data.cast_time
         };
 
-        const parts = [
-            { isInner: isInnerFirst, delay: castTime },
-            { isInner: !isInnerFirst, delay: castTime + interval }
-        ];
+        // ── 依重複次數逐輪排程 ────────────────────────────────────
+        for (let round = 0; round < repeat; round++) {
+            const isInnerFirst = orderList[round];
+            const roundOffset  = round * (interval * 2);
 
-        parts.forEach(part => {
-            monster.setTimeout(() => {
-                const subSkill = {
-                    data: {
-                        name: part.isInner ? "內圓爆發" : "月環爆發",
-                        type: "DonutSkill", // 使用 DonutSkill 邏輯
-                        cast_time: 0,
-                        duration: 0.5,
-                        config: {
-                            inner_radius: innerRadius,
-                            outer_radius: outerRadius,
-                            is_inner_part: part.isInner,
-                            active_color: 0x8b0000
-                        }
-                    },
-                    logic: this
-                };
+            const parts = [
+                { isInner: isInnerFirst,  delay: castTime + roundOffset },
+                { isInner: !isInnerFirst, delay: castTime + roundOffset + interval }
+            ];
 
-                telegraphManager.createTelegraph(subSkill, monster.model.position, (data, pos, rot, id) => {
-                    onAttack(subSkill, pos, rot, id);
-                });
-            }, part.delay);
-        });
+            parts.forEach((part, partIndex) => {
+                // 修正：第一輪第一個 subSkill 在讀條開始時就顯示預警
+                const isFirstSkill = round === 0 && partIndex === 0;
+                const duration  = cfg.duration || 0.5;
+
+                const scheduleDelay = isFirstSkill ? 0 : part.delay;
+
+                monster.setTimeout(() => {
+                    const innerR = part.isInner ? steelInner : donutInner;
+                    const outerR = part.isInner ? steelOuter : donutOuter;
+
+                    const subSkill = {
+                        data: {
+                            name: `${seqName} - ` + (part.isInner ? "鋼鐵" : "月環"),
+                            type: "DonutSkill",
+                            cast_time: isFirstSkill ? this.data.cast_time : 0,
+                            duration: duration,
+                            opacity: opacity,
+                            config: {
+                                inner_radius: innerR,
+                                outer_radius: outerR,
+                                is_inner_part: part.isInner,
+                                color: 0xffa500,
+                                active_color: 0xff0000
+                            }
+                        },
+                        logic: this
+                    };
+
+                    telegraphManager.createTelegraph(
+                        subSkill,
+                        monster.model.position,
+                        (data, pos, rot, id) => onAttack(subSkill, pos, rot, id)
+                    );
+                }, scheduleDelay);
+            });
+        }
     }
 }
