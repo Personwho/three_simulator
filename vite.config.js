@@ -20,7 +20,7 @@ export default defineConfig({
         cors: true, // 允許預覽環境的 CORS
     },
     build: {
-        outDir: 'build',
+        outDir: 'docs',
         emptyOutDir: true,
         manifest: true,
 

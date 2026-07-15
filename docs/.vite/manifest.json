@@ -1,0 +1,66 @@
+{
+  "index.html": {
+    "file": "js/main.js",
+    "name": "main",
+    "src": "index.html",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/content/M5S/floor.json",
+      "resources/content/M5S/monster.json",
+      "resources/content/M5S/player.json",
+      "resources/content/預設地圖/floor.json",
+      "resources/content/預設地圖/monster.json",
+      "resources/content/預設地圖/player.json",
+      "resources/core/Scene.js",
+      "resources/core/Scene.js",
+      "resources/core/Scene.js",
+      "resources/core/Scene.js",
+      "resources/core/Scene.js"
+    ],
+    "css": [
+      "css/main.css"
+    ]
+  },
+  "resources/content/M5S/floor.json": {
+    "file": "js/floor.js",
+    "name": "floor",
+    "src": "resources/content/M5S/floor.json",
+    "isDynamicEntry": true
+  },
+  "resources/content/M5S/monster.json": {
+    "file": "js/monster.js",
+    "name": "monster",
+    "src": "resources/content/M5S/monster.json",
+    "isDynamicEntry": true
+  },
+  "resources/content/M5S/player.json": {
+    "file": "js/player.js",
+    "name": "player",
+    "src": "resources/content/M5S/player.json",
+    "isDynamicEntry": true
+  },
+  "resources/content/預設地圖/floor.json": {
+    "file": "js/floor2.js",
+    "name": "floor",
+    "src": "resources/content/預設地圖/floor.json",
+    "isDynamicEntry": true
+  },
+  "resources/content/預設地圖/monster.json": {
+    "file": "js/monster2.js",
+    "name": "monster",
+    "src": "resources/content/預設地圖/monster.json",
+    "isDynamicEntry": true
+  },
+  "resources/content/預設地圖/player.json": {
+    "file": "js/player2.js",
+    "name": "player",
+    "src": "resources/content/預設地圖/player.json",
+    "isDynamicEntry": true
+  },
+  "resources/core/Scene.js": {
+    "file": "js/Scene.js",
+    "name": "Scene",
+    "src": "resources/core/Scene.js",
+    "isDynamicEntry": true
+  }
+}
