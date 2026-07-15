@@ -508,6 +508,43 @@
                     "outer_first_name": "登天夜狂熱"
                 },
                 "pre_attack": { "opacity": 0.5 }
+            },
+            {
+                "name": "放縱勁舞",
+                "type": "LetsDanceSkill",
+                "other": {
+                    "time": 176.3,
+                    "cast_time": 5.8,
+                    "post_cast_delay": 0.9,
+                    "interval": 2.5,
+                    "duration": 0.5,
+                    "position": [
+                        {"x": 0, "y": 10, "z": 10},
+                        {"x": 1.2, "y": 10, "z": 10},
+                        {"x": 2.4, "y": 10, "z": 10},
+                        {"x": 3.6, "y": 10, "z": 10},
+                        {"x": 5, "y": 10, "z": 10},
+                        {"x": 6.2, "y": 10, "z": 10},
+                        {"x": 7.4, "y": 10, "z": 10},
+                        {"x": 8.6, "y": 10, "z": 10}
+                    ]
+                }
+            },
+            {
+                "name": "在這停頓",
+                "type": "CircleSkill",
+                "other": {
+                    "time": 203.4,
+                    "cast_time": 5,
+                    "duration": 0.5,
+                    "position": {
+                        "x": 4.5,
+                        "y": 10,
+                        "z": 4.5
+                    }
+                },
+                "pre_attack": { "radius": 15, "opacity": 0 },
+                "attack": { "radius": 15 }
             }
         ]
     }

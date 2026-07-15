@@ -8,6 +8,7 @@ import { SquareSkill } from './SquareSkill.js';
 import { ArcadyNightFeverSkill } from './m5s/ArcadyNightFeverSkill.js';
 import { DiscoInfernalSkill } from './m5s/DiscoInfernalSkill.js';
 import { FunkyFloorSkill } from './m5s/FunkyFloorSkill.js';
+import { LetsDanceSkill } from './m5s/LetsDanceSkill.js';
 import { LightSkill } from './m5s/LightSkill.js';
 import { SnapTwistDropTheNeedleSkill } from './m5s/SnapTwistDropTheNeedleSkill.js';
 
@@ -28,6 +29,7 @@ export class SkillFactory {
             case 'ArcadyNightFeverSkill': return new ArcadyNightFeverSkill(skillData);
             case 'DiscoInfernalSkill': return new DiscoInfernalSkill(skillData);
             case 'FunkyFloorSkill': return new FunkyFloorSkill(skillData);
+            case 'LetsDanceSkill': return new LetsDanceSkill(skillData);
             case 'LightSkill': return new LightSkill(skillData);
             case 'SnapTwistDropTheNeedleSkill': return new SnapTwistDropTheNeedleSkill(skillData);
             default:
