@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import { SkillFactory } from './skills/SkillFactory.js';
+import { gameLog } from './GameLog.js';
 
 export class Monster {
-    constructor(model, config) {
+    constructor(model, config, clock, rng) {
         this.model = model;
         this.config = config;
-        this.timeouts = [];
+        this.clock = clock;
+        this.rng = rng;
+        // 虛擬排程佇列，取代真實 setTimeout，讓技能時間軸可以被快轉同步重演
+        this.scheduledTasks = [];
         this.skills = config.skills.map(s => ({
             data: s,
             logic: SkillFactory.create(s),
@@ -39,10 +43,18 @@ export class Monster {
         this.model.name = this.config.name || "monster";
     }
 
-    setTimeout(fn, delay) {
-        const id = setTimeout(fn, delay);
-        this.timeouts.push(id);
-        return id;
+    // 虛擬排程：以模擬時鐘（而非真實時間）決定何時觸發，讓快轉重演時序完全一致
+    setTimeout(fn, delayMs) {
+        this.scheduledTasks.push({ fireAt: this.clock.now() + delayMs, fn });
+    }
+
+    _processScheduledTasks() {
+        const now = this.clock.now();
+        const due = this.scheduledTasks.filter(t => t.fireAt <= now);
+        if (due.length === 0) return;
+        this.scheduledTasks = this.scheduledTasks.filter(t => t.fireAt > now);
+        due.sort((a, b) => a.fireAt - b.fireAt);
+        due.forEach(t => t.fn());
     }
 
     _setupTargetRing(outerRadius) {
@@ -91,13 +103,15 @@ export class Monster {
         this.model.add(ringGroup);
     }
 
-    update(elapsedTime, isGameRunning, telegraphManager, onAttack, allCharacters, addLog) {
+    update(elapsedTime, isGameRunning, telegraphManager, onAttack, allCharacters) {
         if (!this.spawned && isGameRunning && elapsedTime >= (this.config.spawn_time || 0)) {
             this.spawned = true;
             this.model.visible = true;
         }
 
         if (isGameRunning && this.spawned) {
+            this._processScheduledTasks();
+
             // 處理移動路徑
             this.path.forEach((node, index) => {
                 if (elapsedTime >= node.time && this.currentPathIndex < index) {
@@ -135,17 +149,17 @@ export class Monster {
 
             // 處理技能觸發
             this.skills.forEach(skill => {
-                if (!skill.triggered && elapsedTime >= (skill.data.time || 0)) {
+                const other = skill.data.other || {};
+                if (!skill.triggered && elapsedTime >= (other.time || 0)) {
                     skill.triggered = true;
-                    this._executeSingleSkill(skill, telegraphManager, onAttack, allCharacters, addLog);
+                    this._executeSingleSkill(skill, telegraphManager, onAttack, allCharacters);
                 }
             });
         }
     }
 
     reset() {
-        this.timeouts.forEach(id => clearTimeout(id));
-        this.timeouts = [];
+        this.scheduledTasks = [];
 
         this.spawned = (this.config.spawn_time || 0) <= 0;
         this.model.visible = this.spawned;
@@ -176,28 +190,28 @@ export class Monster {
     /**
      * 處理隨機不重複的技能序列 (例如 A->B 或 B->A)
      */
-    _handleShuffledSequence(skillData, telegraphManager, onAttack, allCharacters, addLog) {
-        const config = skillData.config;
-        const subSkills = [...config.skills];
-        const times = config.times; 
+    _handleShuffledSequence(skillData, telegraphManager, onAttack, allCharacters) {
+        const other = skillData.other || {};
+        const subSkills = [...other.skills];
+        const times = other.times;
 
         // 隨機打亂技能順序
         for (let i = subSkills.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = Math.floor(this.rng() * (i + 1));
             [subSkills[i], subSkills[j]] = [subSkills[j], subSkills[i]];
         }
 
         // 依照打亂後的順序分配到指定時間點
         subSkills.forEach((subData, i) => {
             const triggerTime = times[i];
-            const delaySec = triggerTime - (skillData.time || 0);
+            const delaySec = triggerTime - (other.time || 0);
 
             this.setTimeout(() => {
                 const skillInstance = {
                     data: subData,
                     logic: SkillFactory.create(subData)
                 };
-                this._executeSingleSkill(skillInstance, telegraphManager, onAttack, allCharacters, addLog);
+                this._executeSingleSkill(skillInstance, telegraphManager, onAttack, allCharacters);
             }, delaySec * 1000);
         });
     }
@@ -205,57 +219,57 @@ export class Monster {
     /**
      * 內部輔助：執行單個技能的邏輯 (抽離出來以便複用)
      */
-    _executeSingleSkill(skill, telegraphManager, onAttack, allCharacters, addLog) {
+    _executeSingleSkill(skill, telegraphManager, onAttack, allCharacters) {
         const data = skill.data;
-        const cfg = data.config || {};
+        const other = data.other || {};
 
         // 1. 處理特殊模式 (Dispatching)
         if (data.pattern === "shuffled_sequence") {
-            this._handleShuffledSequence(data, telegraphManager, onAttack, allCharacters, addLog);
+            this._handleShuffledSequence(data, telegraphManager, onAttack, allCharacters);
             return;
         }
         if (data.pattern === "random_single") {
-            this._handleRandomSingle(data, telegraphManager, onAttack, allCharacters, addLog);
+            this._handleRandomSingle(data, telegraphManager, onAttack, allCharacters);
             return;
         }
 
         // 2. 處理序列型/複雜邏輯技能
         if (skill.logic.runSequence) {
-            skill.logic.runSequence(this, telegraphManager, onAttack, allCharacters, addLog);
+            skill.logic.runSequence(this, telegraphManager, onAttack, allCharacters);
             return;
         }
 
         // 3. 標準施放程序 (日誌與讀條)
-        if (!data.no_log && !cfg.no_log) {
-            addLog(`${this.config.name} ${data.cast_time > 0 ? '開始讀條' : '施放'}: ${data.name}`, "text-yellow-100 opacity-80");
+        if (!other.no_log) {
+            gameLog.add(`${this.config.name} ${other.cast_time > 0 ? '開始讀條' : '施放'}: ${data.name}`, "text-yellow-100 opacity-80", this.clock.now());
         }
 
-        if (data.cast_time > 0) {
+        if (other.cast_time > 0) {
             this.activeCast = {
                 name: data.name,
-                startTime: Date.now(),
-                duration: data.cast_time
+                startTime: this.clock.now(),
+                duration: other.cast_time
             };
         }
 
         // 4. 目標選取
         let targets = [];
-        if (cfg.targets && Array.isArray(cfg.targets)) {
-            cfg.targets.forEach(group => {
-                const candidates = allCharacters.filter(c => 
+        if (other.targets && Array.isArray(other.targets)) {
+            other.targets.forEach(group => {
+                const candidates = allCharacters.filter(c =>
                     Array.isArray(group.role) ? group.role.includes(c.role) : c.role === group.role
                 );
                 const count = parseInt(group.count) || 1;
-                const selected = candidates.sort(() => 0.5 - Math.random()).slice(0, count);
+                const selected = candidates.sort(() => 0.5 - this.rng()).slice(0, count);
                 targets.push(...selected);
             });
         }
 
         // 5. 決定位置並產生預警
-        const targetPos = cfg.position || { 
-            x: this.model.position.x, 
-            y: this.model.position.y, 
-            z: this.model.position.z 
+        const targetPos = other.position || {
+            x: this.model.position.x,
+            y: this.model.position.y,
+            z: this.model.position.z
         };
 
         if (targets.length > 0) {
@@ -268,20 +282,20 @@ export class Monster {
     /**
      * 處理隨機抽一個技能施放
      */
-    _handleRandomSingle(skillData, telegraphManager, onAttack, allCharacters, addLog) {
-        const config = skillData.config;
-        if (!config.skills || config.skills.length === 0) return;
-        
+    _handleRandomSingle(skillData, telegraphManager, onAttack, allCharacters) {
+        const other = skillData.other || {};
+        if (!other.skills || other.skills.length === 0) return;
+
         // 從清單中隨機挑選一個索引
-        const randomIndex = Math.floor(Math.random() * config.skills.length);
-        const subData = config.skills[randomIndex];
-        
+        const randomIndex = Math.floor(this.rng() * other.skills.length);
+        const subData = other.skills[randomIndex];
+
         const skillInstance = {
             data: subData,
             logic: SkillFactory.create(subData)
         };
-        
+
         // 立即執行選中的技能
-        this._executeSingleSkill(skillInstance, telegraphManager, onAttack, allCharacters, addLog);
+        this._executeSingleSkill(skillInstance, telegraphManager, onAttack, allCharacters);
     }
 }

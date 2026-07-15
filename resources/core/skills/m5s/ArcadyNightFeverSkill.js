@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BaseSkill } from '../BaseSkill.js';
+import { gameLog } from '../../GameLog.js';
 
 export class ArcadyNightFeverSkill extends BaseSkill {
     constructor(skillData) {
@@ -7,16 +8,16 @@ export class ArcadyNightFeverSkill extends BaseSkill {
         this.data = skillData;
     }
 
-    // ── 建立 3D 預警 Mesh ───────────────────────────
-    createTelegraphMesh(skillData) {
-        const radius = skillData.config?.radius || 5;
-        const angle = (skillData.config?.angle || 90) * (Math.PI / 180);
-        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
+    // ── 建立 3D 預警/攻擊 Mesh（扇形，與 ConeSkill 同形狀）───────────
+    _buildMesh(shape, defaultColor) {
+        const radius = shape.radius || 5;
+        const angle = (shape.angle || 90) * (Math.PI / 180);
+        const opacity = (shape.opacity !== undefined) ? shape.opacity : 0.5;
 
         // 核心修正：將 thetaStart 設為 (Math.PI/2 - angle/2)，使扇形中軸對準幾何座標的 Y 軸
         const geometry = new THREE.CircleGeometry(radius, 32, Math.PI / 2 * 3 - angle / 2, angle);
         const material = new THREE.MeshBasicMaterial({
-            color: 0xffa500,
+            color: (shape.color !== undefined) ? shape.color : defaultColor,
             transparent: true,
             opacity: opacity,
             side: THREE.DoubleSide,
@@ -26,15 +27,22 @@ export class ArcadyNightFeverSkill extends BaseSkill {
             polygonOffsetUnits: -1
         });
 
-        const mesh = new THREE.Mesh(geometry, material);
+        return new THREE.Mesh(geometry, material);
+    }
 
-        return mesh;
+    createPreAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.preShape(skillData), 0xffa500);
+    }
+
+    createAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.attackShape(skillData), 0xff0000);
     }
 
     // 更新：扇形判定需要知道攻擊者的朝向 (rotation)
     checkHit(charPos, attackPos, attackRotationY, skillData) {
-        const radius = skillData.config?.radius || 5;
-        const angleLimit = (skillData.config?.angle || 90) * (Math.PI / 180) / 2;
+        const shape = BaseSkill.attackShape(skillData);
+        const radius = shape.radius || 5;
+        const angleLimit = (shape.angle || 90) * (Math.PI / 180) / 2;
 
         const dx = charPos.x - attackPos.x;
         const dz = charPos.z - attackPos.z;
@@ -54,22 +62,29 @@ export class ArcadyNightFeverSkill extends BaseSkill {
     }
 
     // ── 主序列邏輯 (移除 DonutSkill，修改重複攻擊為靜態定位) ──────────────────────────────
-    runSequence(monster, telegraphManager, onAttack, allCharacters, addLog) {
-        const cfg      = this.data.config || {};
-        const castTime = (this.data.cast_time || 4) * 1000;
-        const interval = (cfg.interval || 2.5) * 1000;
-        const hitDur   = cfg.duration || 0.5;
-        const angle = cfg.angle || 45
+    runSequence(monster, telegraphManager, onAttack, allCharacters) {
+        const other = this.other;
+        const castTime = (other.cast_time || 4) * 1000;
+        const interval = (other.interval || 2.5) * 1000;
+        const hitDur = other.duration || 0.5;
+        const angle = other.angle || 45;
 
         // 1. 分組並亂序玩家清單，確保 8 人不重複且職能組交替
-        const thGroup  = allCharacters.filter(c => ['T', 'H'].includes(c.role));
+        const thGroup = allCharacters.filter(c => ['T', 'H'].includes(c.role));
         const dpsGroup = allCharacters.filter(c => ['rD', 'mD'].includes(c.role));
 
-        const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
-        const thShuffled  = shuffle(thGroup);
+        const shuffle = arr => {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(monster.rng() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        };
+        const thShuffled = shuffle(thGroup);
         const dpsShuffled = shuffle(dpsGroup);
 
-        const thFirst = Math.random() < 0.5;
+        const thFirst = monster.rng() < 0.5;
         const targets = [];
         for (let i = 0; i < 4; i++) {
             if (thFirst) {
@@ -80,34 +95,42 @@ export class ArcadyNightFeverSkill extends BaseSkill {
         }
 
         // 2. 音頻炸彈 a 與 b 賦予時間表
-        const firstIsA = Math.random() < 0.5;
+        const firstIsA = monster.rng() < 0.5;
         const durations = firstIsA
             ? [40.5, 43, 25.5, 28, 25.5, 18, 30.5, 23]
             : [45.5, 38, 30.5, 23, 20.5, 23, 25.5, 28];
 
-        if (!this.data.no_log) addLog(`${monster.config.name} 開始引導: ${this.data.name}`, "text-yellow-400 font-bold");
-        
+        if (!other.no_log) gameLog.add(`${monster.config.name} 開始引導: ${this.data.name}`, "text-yellow-400 font-bold", monster.clock.now());
+
         monster.activeCast = {
             name: this.data.name,
-            startTime: Date.now(),
-            duration: this.data.cast_time
+            startTime: monster.clock.now(),
+            duration: other.cast_time || 4
         };
 
         // 記錄每一次瞄準目標時，該目標的「當時位置座標」，以便下一次進行「定格重播」
         const targetPositions = [];
 
+        // 音頻炸彈 a/b 各自的站位表：依「獲得該種 debuff 的順序」（第 1、2、3、4 位）對應站位。
+        // 移動要等全部扇形攻擊都執行完才進行，因此先記錄下來，最後再統一下達移動指令。
+        const bombAPositions = other.bomb_a_positions || [];
+        const bombBPositions = other.bomb_b_positions || [];
+        let bombACount = 0;
+        let bombBCount = 0;
+        const pendingMoves = [];
+
         // 3. 連續施放 9 步，間隔 2.5s
         for (let step = 0; step < 9; step++) {
             const triggerDelay = castTime + step * interval;
-            const target       = targets[step];
-            const debuffName   = firstIsA
+            const target = targets[step];
+            const debuffName = firstIsA
                 ? (step % 2 === 0 ? "音頻炸彈a" : "音頻炸彈b")
                 : (step % 2 === 0 ? "音頻炸彈b" : "音頻炸彈a");
-            const debuffIcon   = firstIsA
+            const debuffIcon = firstIsA
                 ? (step % 2 === 0 ? "assets/icons/音頻炸彈a.webp" : "assets/icons/音頻炸彈b.webp")
                 : (step % 2 === 0 ? "assets/icons/音頻炸彈b.webp" : "assets/icons/音頻炸彈a.webp");
-            
-            const debuffTime   = durations[step];
+
+            const debuffTime = durations[step];
 
             monster.setTimeout(() => {
                 if (!monster.spawned) return;
@@ -126,26 +149,31 @@ export class ArcadyNightFeverSkill extends BaseSkill {
                         icon: debuffIcon,
                         duration: debuffTime,
                         isBuff: false
-                    });
-                    
-                    if (!this.data.no_log) {
-                        addLog(`[點名] ${target.name} 獲得 ${debuffName} (${debuffTime}s)`, "text-purple-300");
+                    }, monster.clock.now());
+
+                    if (!other.no_log) {
+                        gameLog.add(`[點名] ${target.name} 獲得 ${debuffName} (${debuffTime}s)`, "text-purple-300", monster.clock.now());
+                    }
+
+                    // 依「拿到該種 debuff 的順序」記錄站位，先不移動，等全部扇形攻擊結束後再一起走位
+                    if (debuffName === "音頻炸彈a") {
+                        const movePos = bombAPositions[bombACount];
+                        bombACount++;
+                        if (movePos) pendingMoves.push({ target, position: movePos });
+                    } else {
+                        const movePos = bombBPositions[bombBCount];
+                        bombBCount++;
+                        if (movePos) pendingMoves.push({ target, position: movePos });
                     }
 
                     // B. [鎖定新目標] 的 45度 扇形預警
                     const primaryCone = {
                         data: {
-                            name: `節奏扇形 (鎖定 - ${target.name})`,
+                            name: `扇形 (隨機 - ${target.name})`,
                             type: "ConeSkill",
-                            cast_time: 0,
-                            duration: hitDur,
-                            opacity: 0,
-                            config: {
-                                angle: angle,
-                                radius: 15,
-                                active_color: 0xff0000,
-                                target_opacity: 0
-                            }
+                            other: { cast_time: 0, duration: hitDur, target_opacity: 0 },
+                            pre_attack: { angle: angle, radius: 15, opacity: 0 },
+                            attack: { angle: angle, radius: 15, color: 0xff0000 }
                         },
                         logic: this
                     };
@@ -180,17 +208,11 @@ export class ArcadyNightFeverSkill extends BaseSkill {
 
                         const duplicateCone = {
                             data: {
-                                name: `節奏扇形 (播放 - ${targets[step - 1].name})`,
+                                name: `扇形 (重複 - ${targets[step - 1].name})`,
                                 type: "ConeSkill",
-                                cast_time: 0,
-                                duration: hitDur,
-                                opacity: 0,
-                                config: {
-                                    angle: angle,
-                                    radius: 15,
-                                    active_color: 0xff0000,
-                                    target_opacity: 0
-                                }
+                                other: { cast_time: 0, duration: hitDur, target_opacity: 0 },
+                                pre_attack: { angle: angle, radius: 15, opacity: 0 },
+                                attack: { angle: angle, radius: 15, color: 0xff0000 }
                             },
                             logic: this
                         };
@@ -202,7 +224,7 @@ export class ArcadyNightFeverSkill extends BaseSkill {
                             (data, pos, rot, id) => {
                                 onAttack(duplicateCone, pos, rot, id);
                             },
-                            [] 
+                            []
                         );
 
                         // 取得剛剛生成的最新預警，手動將其轉向並定格至上個座標的方向
@@ -218,5 +240,12 @@ export class ArcadyNightFeverSkill extends BaseSkill {
                 }
             }, triggerDelay);
         }
+
+        // 全部扇形攻擊（含最後一次定格重播）都執行完之後，才統一下達移動指令
+        const lastStep = 8;
+        const sequenceEndDelay = castTime + lastStep * interval + hitDur * 1000;
+        monster.setTimeout(() => {
+            pendingMoves.forEach(({ target, position }) => target.setMoveTarget(position));
+        }, sequenceEndDelay);
     }
 }

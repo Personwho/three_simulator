@@ -2,14 +2,13 @@ import * as THREE from 'three';
 import { BaseSkill } from './BaseSkill.js';
 
 export class CircleSkill extends BaseSkill {
-    createTelegraphMesh(skillData) {
-        // 從 data.config 中讀取參數
-        const radius = skillData.config?.radius || 0;
-        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
+    _buildMesh(shape, defaultColor) {
+        const radius = shape.radius || 0;
+        const opacity = (shape.opacity !== undefined) ? shape.opacity : 0.5;
 
         const geometry = new THREE.CircleGeometry(radius, 64); // 增加分段讓圓形更平滑
         const material = new THREE.MeshBasicMaterial({
-            color: 0xffa500,
+            color: (shape.color !== undefined) ? shape.color : defaultColor,
             transparent: true,
             opacity: opacity,
             side: THREE.DoubleSide,
@@ -22,9 +21,17 @@ export class CircleSkill extends BaseSkill {
         mesh.rotation.x = -Math.PI / 2;
         return mesh;
     }
+
+    createPreAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.preShape(skillData), 0xffa500);
+    }
+
+    createAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.attackShape(skillData), 0xff0000);
+    }
+
     checkHit(charPos, attackPos, attackRotationY, skillData) {
-        // 從 data.config 中讀取半徑進行判定
-        const radius = skillData.config?.radius || 0;
+        const radius = BaseSkill.attackShape(skillData).radius || 0;
         const dist = new THREE.Vector2(charPos.x, charPos.z).distanceTo(new THREE.Vector2(attackPos.x, attackPos.z));
         return dist <= radius;
     }

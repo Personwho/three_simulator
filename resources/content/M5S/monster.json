@@ -30,13 +30,11 @@
             {
                 "name": "即死區",
                 "type": "SquareSkill",
-                "no_log": true, 
-                "time": 0,
-                "cast_time": 0,
-                "duration": 5400,
-                "config": {
-                    "width": 1,
-                    "height": 1,
+                "other": {
+                    "no_log": true,
+                    "time": 0,
+                    "cast_time": 0,
+                    "duration": 5400,
                     "position": [
                         {"x": 0, "y": 10, "z": 0}, {"x": 1, "y": 10, "z": 0}, {"x": 2, "y": 10, "z": 0},
                         {"x": 3, "y": 10, "z": 0}, {"x": 4, "y": 10, "z": 0}, {"x": 5, "y": 10, "z": 0},
@@ -51,60 +49,62 @@
                         {"x": 4, "y": 10, "z": 9}, {"x": 5, "y": 10, "z": 9}, {"x": 6, "y": 10, "z": 9},
                         {"x": 7, "y": 10, "z": 9}, {"x": 8, "y": 10, "z": 9}, {"x": 9, "y": 10, "z": 9}
                     ]
-                }
+                },
+                "pre_attack": { "width": 1, "height": 1 },
+                "attack": { "width": 1, "height": 1 }
             },
             {
                 "name": "經典銘心",
                 "type": "ConeSkill",
-                "time": 9,
-                "cast_time": 5,
-                "opacity": 0,
-                "config": {
-                    "angle": 45,
-                    "radius": 15,
+                "other": {
+                    "time": 9,
+                    "cast_time": 5,
+                    "duration": 0.5,
                     "targets": [
                         {"role": ["T"], "count": 2}
                     ]
-                }
+                },
+                "pre_attack": { "angle": 45, "radius": 15, "opacity": 0 },
+                "attack": { "angle": 45, "radius": 15 }
             },
             {
                 "name": "AB面隨機順序",
                 "pattern": "shuffled_sequence",
-                "time": 22,
-                "config": {
+                "other": {
+                    "time": 22,
                     "times": [22, 42],
                     "skills": [
                         {
                             "name": "放入A面",
                             "type": "ConeSkill",
-                            "cast_time": 4,
-                            "opacity": 0,
-                            "config": {
-                                "angle": 45,
-                                "radius": 15,
+                            "other": {
+                                "cast_time": 4,
+                                "duration": 0.5,
                                 "wait_time": 12,
+                                "target_opacity": 0,
                                 "targets": [
                                     {"role": ["T"], "count": 1},
                                     {"role": ["H"], "count": 1},
                                     {"role": ["rD", "mD"], "count": 1}
-                                ],
-                                "target_opacity": 0
-                            }
+                                ]
+                            },
+                            "pre_attack": { "angle": 45, "radius": 15, "opacity": 0 },
+                            "attack": { "angle": 45, "radius": 15 }
                         },
                         {
                             "name": "放入B面",
                             "type": "LineSkill",
-                            "cast_time": 4,
-                            "opacity": 0,
-                            "config": {
-                                "width": 1.6,
-                                "length": 15,
+                            "other": {
+                                "cast_time": 4,
+                                "duration": 0.5,
                                 "wait_time": 12,
+                                "target_opacity": 0,
                                 "targets": [
                                     {"role": ["H"], "count": 2}
-                                ],
-                                "target_opacity": 0
-                            }
+                                ]
+                            },
+                            "pre_attack": { "width": 1.6, "length": 15, "opacity": 0 },
+                            "attack": { "width": 1.6, "length": 15 }
                         }
                     ]
                 }
@@ -112,12 +112,10 @@
             {
                 "name": "連指向、定格&播放",
                 "type": "SnapTwistDropTheNeedleSkill",
-                "pattern": "sequence",
-                "time": 28,
-                "cast_time": 5,
-                "duration": 0.5,
-                "opacity": 0,
-                "config": {
+                "other": {
+                    "time": 28,
+                    "cast_time": 5,
+                    "duration": 0.5,
                     "repeat_min": 2,
                     "repeat_max": 4,
                     "groups": [
@@ -129,11 +127,10 @@
             {
                 "name": "連指向、定格&播放",
                 "type": "SnapTwistDropTheNeedleSkill",
-                "time": 48,
-                "cast_time": 5,
-                "duration": 0.5,
-                "opacity": 0,
-                "config": {
+                "other": {
+                    "time": 48,
+                    "cast_time": 5,
+                    "duration": 0.5,
                     "repeat_min": 2,
                     "repeat_max": 4,
                     "groups": [
@@ -145,44 +142,44 @@
             {
                 "name": "歡慶時刻",
                 "type": "CircleSkill",
-                "time": 59,
-                "cast_time": 5,
-                "opacity": 0,
-                "config": {
+                "other": {
+                    "time": 59,
+                    "cast_time": 5,
+                    "duration": 0.5,
                     "position": {
                         "x": 4.5,
                         "y": 10,
                         "z": 4.5
-                    },
-                    "radius": 15
-                }
+                    }
+                },
+                "pre_attack": { "radius": 15, "opacity": 0 },
+                "attack": { "radius": 15 }
             },
             {
                 "name": "激熱跳舞街",
                 "type": "DiscoInfernalSkill",
-                "pattern": "sequence",
-                "time": 72,
-                "cast_time": 4,
-                "opacity": 0,
-                "config": {
-                    "radius": 15
-                }
+                "other": {
+                    "time": 72,
+                    "cast_time": 4,
+                    "duration": 0.5
+                },
+                "pre_attack": { "radius": 15, "opacity": 0 },
+                "attack": { "radius": 15 }
             },
             {
                 "name": "激熱跳舞街-場地隨機順序",
                 "pattern": "shuffled_sequence",
-                "time": 78,
-                "config": {
+                "other": {
+                    "time": 78,
                     "times": [78, 82],
                     "skills": [
                         {
                             "name": "激熱跳舞街-場地",
                             "type": "FunkyFloorSkill",
-                            "cast_time": 0,
-                            "no_log": true,
-                            "config": { 
-                                "width": 1,
-                                "height": 1,
+                            "other": {
+                                "cast_time": 0,
+                                "duration": 0.5,
+                                "no_log": true,
                                 "repeat_count": 5,
                                 "pre_warning_time": 4,
                                 "interval_time": 3.5,
@@ -191,22 +188,23 @@
                                     {"x": 2, "y": 10, "z": 3}, {"x": 4, "y": 10, "z": 3}, {"x": 6, "y": 10, "z": 3}, {"x": 8, "y": 10, "z": 3},
                                     {"x": 2, "y": 10, "z": 5}, {"x": 4, "y": 10, "z": 5}, {"x": 6, "y": 10, "z": 5}, {"x": 8, "y": 10, "z": 5},
                                     {"x": 2, "y": 10, "z": 7}, {"x": 4, "y": 10, "z": 7}, {"x": 6, "y": 10, "z": 7}, {"x": 8, "y": 10, "z": 7},
-            
+
                                     {"x": 1, "y": 10, "z": 2}, {"x": 3, "y": 10, "z": 2}, {"x": 5, "y": 10, "z": 2}, {"x": 7, "y": 10, "z": 2},
                                     {"x": 1, "y": 10, "z": 4}, {"x": 3, "y": 10, "z": 4}, {"x": 5, "y": 10, "z": 4}, {"x": 7, "y": 10, "z": 4},
                                     {"x": 1, "y": 10, "z": 6}, {"x": 3, "y": 10, "z": 6}, {"x": 5, "y": 10, "z": 6}, {"x": 7, "y": 10, "z": 6},
                                     {"x": 1, "y": 10, "z": 8}, {"x": 3, "y": 10, "z": 8}, {"x": 5, "y": 10, "z": 8}, {"x": 7, "y": 10, "z": 8}
                                 ]
-                            }
+                            },
+                            "pre_attack": { "width": 1, "height": 1 },
+                            "attack": { "width": 1, "height": 1 }
                         },
                         {
                             "name": "激熱跳舞街-場地",
                             "type": "FunkyFloorSkill",
-                            "cast_time": 0,
-                            "no_log": true,
-                            "config": { 
-                                "width": 1,
-                                "height": 1,
+                            "other": {
+                                "cast_time": 0,
+                                "duration": 0.5,
+                                "no_log": true,
                                 "repeat_count": 5,
                                 "pre_warning_time": 4,
                                 "interval_time": 3.5,
@@ -215,13 +213,15 @@
                                     {"x": 2, "y": 10, "z": 4}, {"x": 4, "y": 10, "z": 4}, {"x": 6, "y": 10, "z": 4}, {"x": 8, "y": 10, "z": 4},
                                     {"x": 2, "y": 10, "z": 6}, {"x": 4, "y": 10, "z": 6}, {"x": 6, "y": 10, "z": 6}, {"x": 8, "y": 10, "z": 6},
                                     {"x": 2, "y": 10, "z": 8}, {"x": 4, "y": 10, "z": 8}, {"x": 6, "y": 10, "z": 8}, {"x": 8, "y": 10, "z": 8},
-            
+
                                     {"x": 1, "y": 10, "z": 1}, {"x": 3, "y": 10, "z": 1}, {"x": 5, "y": 10, "z": 1}, {"x": 7, "y": 10, "z": 1},
                                     {"x": 1, "y": 10, "z": 3}, {"x": 3, "y": 10, "z": 3}, {"x": 5, "y": 10, "z": 3}, {"x": 7, "y": 10, "z": 3},
                                     {"x": 1, "y": 10, "z": 5}, {"x": 3, "y": 10, "z": 5}, {"x": 5, "y": 10, "z": 5}, {"x": 7, "y": 10, "z": 5},
                                     {"x": 1, "y": 10, "z": 7}, {"x": 3, "y": 10, "z": 7}, {"x": 5, "y": 10, "z": 7}, {"x": 7, "y": 10, "z": 7}
                                 ]
-                            }
+                            },
+                            "pre_attack": { "width": 1, "height": 1 },
+                            "attack": { "width": 1, "height": 1 }
                         }
                     ]
                 }
@@ -229,139 +229,146 @@
             {
                 "name": "聚光燈 - 1",
                 "type": "LightSkill",
-                "time": 78,
-                "cast_time": 0,
-                "duration": 35,
-                "no_log": true,
-                "config": {
-                    "radius": 0.5,
+                "other": {
+                    "time": 78,
+                    "cast_time": 0,
+                    "duration": 35,
+                    "no_log": true,
                     "position": [
                         {"x": 2, "y": 10.01, "z": 7},
                         {"x": 7, "y": 10.01, "z": 7},
                         {"x": 7, "y": 10.01, "z": 2},
                         {"x": 2, "y": 10.01, "z": 2}
                     ]
-                }
+                },
+                "pre_attack": { "radius": 0.5 },
+                "attack": { "radius": 0.5 }
             },
             {
                 "name": "聚光燈 - 2",
                 "type": "LightSkill",
-                "time": 78,
-                "cast_time": 0,
-                "duration": 35,
-                "no_log": true,
-                "config": {
-                    "radius": 0.5,
+                "other": {
+                    "time": 78,
+                    "cast_time": 0,
+                    "duration": 35,
+                    "no_log": true,
                     "position": [
                         {"x": 7, "y": 10, "z": 7},
                         {"x": 7, "y": 10, "z": 2},
                         {"x": 2, "y": 10, "z": 2},
                         {"x": 2, "y": 10, "z": 7}
                     ]
-                }
+                },
+                "pre_attack": { "radius": 0.5 },
+                "attack": { "radius": 0.5 }
             },
             {
                 "name": "聚光燈 - 3",
                 "type": "LightSkill",
-                "time": 78,
-                "cast_time": 0,
-                "duration": 35,
-                "no_log": true,
-                "config": {
-                    "radius": 0.5,
+                "other": {
+                    "time": 78,
+                    "cast_time": 0,
+                    "duration": 35,
+                    "no_log": true,
                     "position": [
                         {"x": 7, "y": 10, "z": 2},
                         {"x": 2, "y": 10, "z": 2},
                         {"x": 2, "y": 10, "z": 7},
                         {"x": 7, "y": 10, "z": 7}
                     ]
-                }
+                },
+                "pre_attack": { "radius": 0.5 },
+                "attack": { "radius": 0.5 }
             },
             {
                 "name": "聚光燈 - 4",
                 "type": "LightSkill",
-                "time": 78,
-                "cast_time": 0,
-                "duration": 35,
-                "no_log": true,
-                "config": {
-                    "radius": 0.5,
+                "other": {
+                    "time": 78,
+                    "cast_time": 0,
+                    "duration": 35,
+                    "no_log": true,
                     "position": [
                         {"x": 2, "y": 10, "z": 2},
                         {"x": 2, "y": 10, "z": 7},
                         {"x": 7, "y": 10, "z": 7},
                         {"x": 7, "y": 10, "z": 2}
                     ]
-                }
+                },
+                "pre_attack": { "radius": 0.5 },
+                "attack": { "radius": 0.5 }
             },
             {
                 "name": "聚光燈 - A",
                 "type": "LightSkill",
-                "time": 78,
-                "cast_time": 0,
-                "duration": 35,
-                "no_log": true,
-                "config": {
-                    "radius": 0.5,
+                "other": {
+                    "time": 78,
+                    "cast_time": 0,
+                    "duration": 35,
+                    "no_log": true,
                     "position": [
                         {"x": 4, "y": 10, "z": 6},
                         {"x": 4, "y": 10, "z": 3}
                     ]
-                }
+                },
+                "pre_attack": { "radius": 0.5 },
+                "attack": { "radius": 0.5 }
             },
             {
                 "name": "聚光燈 - B",
                 "type": "LightSkill",
-                "time": 78,
-                "cast_time": 0,
-                "duration": 35,
-                "no_log": true,
-                "config": {
-                    "radius": 0.5,
+                "other": {
+                    "time": 78,
+                    "cast_time": 0,
+                    "duration": 35,
+                    "no_log": true,
                     "position": [
                         {"x": 6, "y": 10, "z": 5},
                         {"x": 3, "y": 10, "z": 5}
                     ]
-                }
+                },
+                "pre_attack": { "radius": 0.5 },
+                "attack": { "radius": 0.5 }
             },
             {
                 "name": "聚光燈 - C",
                 "type": "LightSkill",
-                "time": 78,
-                "cast_time": 0,
-                "duration": 35,
-                "no_log": true,
-                "config": {
-                    "radius": 0.5,
+                "other": {
+                    "time": 78,
+                    "cast_time": 0,
+                    "duration": 35,
+                    "no_log": true,
                     "position": [
                         {"x": 5, "y": 10, "z": 3},
                         {"x": 5, "y": 10, "z": 6}
                     ]
-                }
+                },
+                "pre_attack": { "radius": 0.5 },
+                "attack": { "radius": 0.5 }
             },
             {
                 "name": "聚光燈 - D",
                 "type": "LightSkill",
-                "time": 78,
-                "cast_time": 0,
-                "duration": 35,
-                "no_log": true,
-                "config": {
-                    "radius": 0.5,
+                "other": {
+                    "time": 78,
+                    "cast_time": 0,
+                    "duration": 35,
+                    "no_log": true,
                     "position": [
                         {"x": 3, "y": 10, "z": 4},
                         {"x": 6, "y": 10, "z": 4}
                     ]
-                }
+                },
+                "pre_attack": { "radius": 0.5 },
+                "attack": { "radius": 0.5 }
             },
             {
                 "name": "鋼鐵圓環隨機順序",
                 "type": "ConcentricDonutSkill",
-                "time": 84.5,
-                "cast_time": 5,
-                "opacity": 0,
-                "config": {
-                    "wait_time": 0.5,
+                "other": {
+                    "time": 84.5,
+                    "cast_time": 5,
+                    "duration": 0.5,
                     "interval": 1.5,
                     "repeat": 1,
                     "random": true,
@@ -369,48 +376,48 @@
                     "steel_outer_radius": 0,
                     "donut_inner_radius": 1,
                     "donut_outer_radius": 15,
-                    "duration": 0.5,
                     "inner_first_name": "內翻外轉",
                     "outer_first_name": "外翻內轉"
-                }
+                },
+                "pre_attack": { "opacity": 0 }
             },
             {
                 "name": "AB面隨機二選一",
                 "pattern": "random_single",
-                "time": 95,
-                "config": {
+                "other": {
+                    "time": 95,
                     "skills": [
                         {
                             "name": "放入A面",
                             "type": "ConeSkill",
-                            "cast_time": 4,
-                            "opacity": 0,
-                            "config": {
-                                "angle": 45,
-                                "radius": 15,
+                            "other": {
+                                "cast_time": 4,
+                                "duration": 0.5,
                                 "wait_time": 22.5,
+                                "target_opacity": 0,
                                 "targets": [
                                     {"role": ["T"], "count": 1},
                                     {"role": ["H"], "count": 1},
                                     {"role": ["rD", "mD"], "count": 1}
-                                ],
-                                "target_opacity": 0
-                            }
+                                ]
+                            },
+                            "pre_attack": { "angle": 45, "radius": 15, "opacity": 0 },
+                            "attack": { "angle": 45, "radius": 15 }
                         },
                         {
                             "name": "放入B面",
                             "type": "LineSkill",
-                            "cast_time": 4,
-                            "opacity": 0,
-                            "config": {
-                                "width": 1.6,
-                                "length": 15,
+                            "other": {
+                                "cast_time": 4,
+                                "duration": 0.5,
                                 "wait_time": 22.5,
+                                "target_opacity": 0,
                                 "targets": [
                                     {"role": ["H"], "count": 2}
-                                ],
-                                "target_opacity": 0
-                            }
+                                ]
+                            },
+                            "pre_attack": { "width": 1.6, "length": 15, "opacity": 0 },
+                            "attack": { "width": 1.6, "length": 15 }
                         }
                     ]
                 }
@@ -418,12 +425,10 @@
             {
                 "name": "連指向、定格&播放",
                 "type": "SnapTwistDropTheNeedleSkill",
-                "pattern": "sequence",
-                "time": 111,
-                "cast_time": 5,
-                "duration": 0.5,
-                "opacity": 0,
-                "config": {
+                "other": {
+                    "time": 111,
+                    "cast_time": 5,
+                    "duration": 0.5,
                     "repeat_min": 2,
                     "repeat_max": 4,
                     "groups": [
@@ -435,62 +440,74 @@
             {
                 "name": "歡慶時刻",
                 "type": "CircleSkill",
-                "time": 122,
-                "cast_time": 5,
-                "opacity": 0,
-                "config": {
+                "other": {
+                    "time": 122,
+                    "cast_time": 5,
+                    "duration": 0.5,
                     "position": {
                         "x": 4.5,
                         "y": 10,
                         "z": 4.5
-                    },
-                    "radius": 15
-                }
+                    }
+                },
+                "pre_attack": { "radius": 15, "opacity": 0 },
+                "attack": { "radius": 15 }
             },
             {
                 "name": "經典銘心",
                 "type": "ConeSkill",
-                "time": 130,
-                "cast_time": 5,
-                "opacity": 0,
-                "config": {
-                    "angle": 45,
-                    "radius": 15,
+                "other": {
+                    "time": 130,
+                    "cast_time": 5,
+                    "duration": 0.5,
                     "targets": [
                         {"role": ["T"], "count": 2}
                     ]
-                }
+                },
+                "pre_attack": { "angle": 45, "radius": 15, "opacity": 0 },
+                "attack": { "angle": 45, "radius": 15 }
             },
             {
                 "name": "登天夜狂熱",
                 "type": "ArcadyNightFeverSkill",
-                "time": 149.5,
-                "cast_time": 4,
-                "config": {
+                "other": {
+                    "time": 149.5,
+                    "cast_time": 4,
                     "interval": 2.5,
-                    "duration": 0.5
+                    "duration": 0.5,
+                    "bomb_a_positions": [
+                        {"x": 4.5, "y": 10, "z": 4},
+                        {"x": 4.5, "y": 10, "z": 6},
+                        {"x": 4.5, "y": 10, "z": 5},
+                        {"x": 4.5, "y": 10, "z": 3}
+                    ],
+                    "bomb_b_positions": [
+                        {"x": 4.5, "y": 10, "z": 3},
+                        {"x": 4.5, "y": 10, "z": 5},
+                        {"x": 4.5, "y": 10, "z": 6},
+                        {"x": 4.5, "y": 10, "z": 4}
+                    ]
                 }
             },
             {
                 "name": "登天夜狂熱-鋼鐵圓環依序施放",
                 "type": "ConcentricDonutSkill",
-                "time": 149.5,
-                "cast_time": 4,
-                "no_log": true,
-                "config": {
-                    "wait_time": 0.5,
+                "other": {
+                    "time": 149.5,
+                    "cast_time": 4,
+                    "no_log": true,
                     "interval": 2.5,
                     "repeat": 4,
                     "random": false,
-                    "order": [true, false, true, false],
+                    "order": [true, true, true, true],
                     "steel_inner_radius": 1.41421356,
                     "steel_outer_radius": 0,
                     "donut_inner_radius": 1,
                     "donut_outer_radius": 15,
-                    "hit_duration": 0.5,
                     "inner_first_name": "登天夜狂熱",
                     "outer_first_name": "登天夜狂熱"
-                }
+                },
+                "pre_attack": { "opacity": 0.5 }
             }
         ]
     }

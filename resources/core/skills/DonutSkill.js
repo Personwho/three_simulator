@@ -2,15 +2,15 @@ import * as THREE from 'three';
 import { BaseSkill } from './BaseSkill.js';
 
 export class DonutSkill extends BaseSkill {
-    createTelegraphMesh(skillData) {
-        const innerRadius = skillData.config?.inner_radius == 0 ? 0 : (skillData.config?.inner_radius ?? 2);
-        const outerRadius = skillData.config?.outer_radius || 5;
-        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
+    _buildMesh(shape, defaultColor) {
+        const innerRadius = shape.inner_radius == 0 ? 0 : (shape.inner_radius ?? 2);
+        const outerRadius = shape.outer_radius || 5;
+        const opacity = (shape.opacity !== undefined) ? shape.opacity : 0.5;
 
         // 使用 RingGeometry 建立圓環
         const geometry = new THREE.RingGeometry(innerRadius, outerRadius, 64);
         const material = new THREE.MeshBasicMaterial({
-            color: 0xff0000,
+            color: (shape.color !== undefined) ? shape.color : defaultColor,
             transparent: true,
             opacity: opacity,
             side: THREE.DoubleSide,
@@ -26,9 +26,18 @@ export class DonutSkill extends BaseSkill {
         return mesh;
     }
 
+    createPreAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.preShape(skillData), 0xff0000);
+    }
+
+    createAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.attackShape(skillData), 0xff0000);
+    }
+
     checkHit(charPos, attackPos, attackRotationY, skillData) {
-        const innerRadius = skillData.config?.inner_radius == 0 ? 0 : (skillData.config?.inner_radius ?? 2);
-        const outerRadius = skillData.config?.outer_radius || 5;
+        const shape = BaseSkill.attackShape(skillData);
+        const innerRadius = shape.inner_radius == 0 ? 0 : (shape.inner_radius ?? 2);
+        const outerRadius = shape.outer_radius || 5;
 
         // 計算角色與攻擊中心的歐幾里得距離 (忽略 Y 軸)
         const dx = charPos.x - attackPos.x;

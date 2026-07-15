@@ -2,15 +2,15 @@ import * as THREE from 'three';
 import { BaseSkill } from './BaseSkill.js';
 
 export class ConeSkill extends BaseSkill {
-    createTelegraphMesh(skillData) {
-        const radius = skillData.config?.radius || 5;
-        const angle = (skillData.config?.angle || 90) * (Math.PI / 180);
-        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
+    _buildMesh(shape, defaultColor) {
+        const radius = shape.radius || 5;
+        const angle = (shape.angle || 90) * (Math.PI / 180);
+        const opacity = (shape.opacity !== undefined) ? shape.opacity : 0.5;
 
         // 核心修正：將 thetaStart 設為 (Math.PI/2 - angle/2)，使扇形中軸對準幾何座標的 Y 軸
         const geometry = new THREE.CircleGeometry(radius, 32, Math.PI / 2 * 3 - angle / 2, angle);
         const material = new THREE.MeshBasicMaterial({
-            color: 0xffa500,
+            color: (shape.color !== undefined) ? shape.color : defaultColor,
             transparent: true,
             opacity: opacity,
             side: THREE.DoubleSide,
@@ -20,15 +20,22 @@ export class ConeSkill extends BaseSkill {
             polygonOffsetUnits: -1
         });
 
-        const mesh = new THREE.Mesh(geometry, material);
-
-        return mesh;
+        return new THREE.Mesh(geometry, material);
     }
 
-    // 更新：扇形判定需要知道攻擊者的朝向 (rotation)
+    createPreAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.preShape(skillData), 0xffa500);
+    }
+
+    createAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.attackShape(skillData), 0xff0000);
+    }
+
+    // 扇形判定需要知道攻擊者的朝向 (rotation)
     checkHit(charPos, attackPos, attackRotationY, skillData) {
-        const radius = skillData.config?.radius || 5;
-        const angleLimit = (skillData.config?.angle || 90) * (Math.PI / 180) / 2;
+        const shape = BaseSkill.attackShape(skillData);
+        const radius = shape.radius || 5;
+        const angleLimit = (shape.angle || 90) * (Math.PI / 180) / 2;
 
         const dx = charPos.x - attackPos.x;
         const dz = charPos.z - attackPos.z;

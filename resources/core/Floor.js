@@ -115,9 +115,9 @@ export class Floor {
         });
     }
 
-    static updateMechanics(floor, deltaTime) {
+    static updateMechanics(floor, deltaTime, nowMs) {
         if (floor.userData.mechanicInstance) {
-            floor.userData.mechanicInstance.update(floor, deltaTime);
+            floor.userData.mechanicInstance.update(floor, deltaTime, nowMs);
         }
     }
 }

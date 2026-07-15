@@ -6,15 +6,15 @@ export class StandardMechanic extends BaseMechanic {
         this.config = config;
     }
 
-    update(floor, dt) {
+    update(floor, dt, nowMs) {
         if (floor.userData.isDisappeared) {
-            const elapsed = (Date.now() - floor.userData.disappearStartTime) / 1000;
+            const elapsed = (nowMs - floor.userData.disappearStartTime) / 1000;
             if (elapsed >= 3) this._respawn(floor);
             return;
         }
         const playerCount = floor.userData.activePlayers.size;
         if (this.config.max_players && playerCount >= this.config.max_players) {
-            this._vanish(floor, "人數過多");
+            this._vanish(floor, "人數過多", nowMs);
             return;
         }
         if (playerCount === 1 && this.config.time_limit > 0) {
@@ -23,7 +23,7 @@ export class StandardMechanic extends BaseMechanic {
                 this._setMatteColor(floor, parseInt(this.config.warning_color));
             }
             if (floor.userData.standingTimer > this.config.time_limit) {
-                this._vanish(floor, "站立超時");
+                this._vanish(floor, "站立超時", nowMs);
             }
         } else {
             floor.userData.standingTimer = 0;
@@ -43,10 +43,10 @@ export class StandardMechanic extends BaseMechanic {
         }
     }
 
-    _vanish(floor, reason) {
+    _vanish(floor, reason, nowMs) {
         floor.visible = false;
         floor.userData.isDisappeared = true;
-        floor.userData.disappearStartTime = Date.now();
+        floor.userData.disappearStartTime = nowMs;
     }
 
     _respawn(floor) {

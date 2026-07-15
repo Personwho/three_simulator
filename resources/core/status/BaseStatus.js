@@ -7,13 +7,13 @@ export class BaseStatus {
         this.value = data.value ?? 1;
         this.icon = data.icon;
         this.isBuff = !!data.isBuff;
-        this.startTime = data.startTime || Date.now();
+        this.startTime = data.startTime ?? 0;
         this.isExpired = false;
     }
 
     // 每一幀更新邏輯
-    update(deltaTime) {
-        if (Date.now() - this.startTime >= this.duration * 1000) {
+    update(deltaTime, nowMs) {
+        if (nowMs - this.startTime >= this.duration * 1000) {
             this.isExpired = true;
         }
     }
@@ -23,5 +23,5 @@ export class BaseStatus {
     }
 
     // 當狀態結束時觸發
-    onExpire(telegraphManager, addLog) {}
+    onExpire(telegraphManager, nowMs) {}
 }

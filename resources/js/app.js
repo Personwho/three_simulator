@@ -101,6 +101,13 @@ document.getElementById('reset-game').addEventListener('click', () => {
     import('../core/Scene.js').then(m => m.resetGame(selectedPlayer));
 });
 
+// 快轉按鈕：直接把遊戲重演到指定秒數
+document.getElementById('fast-forward-btn').addEventListener('click', () => {
+    const seconds = Number(document.getElementById('fast-forward-time').value);
+    if (!Number.isFinite(seconds) || seconds < 0) return;
+    import('../core/Scene.js').then(m => m.fastForwardTo(seconds));
+});
+
 // 初始化預設場景
 async function initDefaultScene() {
     await populateSceneSelect();

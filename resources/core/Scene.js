@@ -8,6 +8,20 @@ import { Monster } from './Monster.js';
 import { Tool } from './Tool.js';
 import { ActionBar } from './ActionBar.js';
 import { SkillFactory } from './skills/SkillFactory.js';
+import { GameClock } from './GameClock.js';
+import { createRng, createSeed } from './SeededRandom.js';
+import { gameLog } from './GameLog.js';
+
+// 快轉時每步模擬的固定時間片（毫秒），以及安全上限，避免誤觸超大秒數卡死畫面
+// 注意：必須貼近真實影格間隔（約 60fps）。角色重力/落地判定的容許誤差很小（見
+// Character.js 的落地容許區間），步距一旦拉大（例如 100ms），重力會讓角色一步就
+// 掉出判定區間，導致每個角色都被判定「掉出場外」而觸發重置，快轉因此卡在 0 秒。
+const FAST_FORWARD_STEP_MS = 1000 / 60;
+const FAST_FORWARD_MAX_STEPS = 90000; // 90000 * 1/60s = 1500 秒（25 分鐘），足夠涵蓋單場戰鬥
+// 真實 rAF 影格 dt 的安全上限（秒）：同樣是為了不讓角色重力/落地判定被過大的 dt 沖出容許範圍
+const MAX_FRAME_DT = 1 / 30;
+// 快轉時每模擬這麼多個 tick 就實際畫一幀給使用者看，數字愈大播放感覺愈快
+const FAST_FORWARD_TICKS_PER_FRAME = 10;
 
 class SceneManager {
     constructor() {
@@ -23,19 +37,27 @@ class SceneManager {
         this.controlledCharacter = null;
         this.animationId = null;
         this.isGameRunning = false;
-        this.gameStartTime = 0;
         this.previousTime = 0;
         this.sceneData = null;
-        this.lastStatusUIUpdate = 0; // 新增：上次 UI 更新時間
-        this.lastStatusFingerprint = ""; // 新增：狀態清單指紋
+        this.lastStatusUIUpdate = 0; // 上次 UI 更新時間（模擬時間 ms）
+        this.lastStatusFingerprint = ""; // 狀態清單指紋
         this.actionBar = new ActionBar();
         this.interactionRaycaster = new THREE.Raycaster(); // 提升到成員變數複用
-        this.lastDamageLogTime = 0;
-        this.skillLogTimes = new Map();
-        this.maxLogCount = 200; // 最大紀錄條數
+        this._isFastForwarding = false; // 快轉中：animate() 的 rAF 迴圈要讓出，避免和快轉自己的 tick 重複模擬
+        this._loadGeneration = 0; // 場景載入世代編號，防止重疊的 init() 呼叫互相污染彼此的角色/怪物清單
+
+        // 模擬時鐘：所有戰鬥邏輯（技能排程、Buff/Debuff 到期、預警倒數）都以此為準，
+        // 讓「快轉到指定秒數」可以用同一套邏輯同步重演，而不是依賴真實時間。
+        this.clock = new GameClock();
+        this.seed = 0;
+        this.rng = createRng(0);
     }
 
     async init(containerId, { floor, players, monsters }, selectedPlayerName, isDebug = false) {
+        // 這次載入的世代編號：若載入途中（等待 GLTF 等 async 資源時）又觸發了新的 init()，
+        // 舊的這次會在每個await 點之後發現世代已經被超越，安全中止，避免兩批角色/怪物混在一起同時跑。
+        const generation = ++this._loadGeneration;
+
         // 使用 Tool 處理資料
         this.sceneData = {
             floor: Tool.processData('floor', floor),
@@ -64,12 +86,16 @@ class SceneManager {
         this.renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(this.renderer.domElement);
 
-        this.telegraphManager = new TelegraphManager(this.scene);
+        this.clock.set(0);
+        this._rollNewSeed();
+        this.telegraphManager = new TelegraphManager(this.scene, this.clock);
 
-        this._clearLogs();
-        this._addLog("場景載入完成", "text-blue-400");
+        gameLog.clear();
+        gameLog.add("場景載入完成", "text-blue-400", this.clock.now());
 
-        await this._setupObjects(selectedPlayerName);
+        await this._setupObjects(selectedPlayerName, generation);
+        if (generation !== this._loadGeneration) return; // 已被更新的 init() 呼叫取代，這次到此為止
+
         this._setupLights();
         if (isDebug) {
             this._setupHelpers();
@@ -80,43 +106,24 @@ class SceneManager {
         this.animate(0);
     }
 
-    // 新增：向畫面左下角添加紀錄
-    _addLog(message, colorClass = "text-white") {
-        const logList = document.getElementById('game-log-list');
-        if (!logList) return;
-
-        const time = new Date().toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const logItem = document.createElement('div');
-        logItem.className = `leading-tight ${colorClass}`;
-        logItem.innerHTML = `<span class="">[${time}]</span> ${message}`;
-
-        logList.appendChild(logItem);
-
-        // 限制紀錄條數，移除舊紀錄
-        while (logList.children.length > this.maxLogCount) {
-            logList.removeChild(logList.firstChild);
-        }
-
-        // 自動滾動到底部
-        logList.scrollTop = logList.scrollHeight;
+    // 產生新的一次性種子，讓下一次開始/重置/快轉都以同一顆種子重演
+    _rollNewSeed() {
+        this.seed = createSeed();
+        this.rng = createRng(this.seed);
     }
 
-    _clearLogs() {
-        const logList = document.getElementById('game-log-list');
-        if (logList) logList.innerHTML = '';
-    }
-
-    async _setupObjects(selectedPlayerName) {
+    async _setupObjects(selectedPlayerName, generation) {
         this.groundObjects = [];
         this.characters = [];
         this.monsterInstances = [];
 
         for (const f of this.sceneData.floor) {
             const tiles = await Floor.create(f, this.loader);
-            tiles.forEach(tile => { 
+            if (generation !== this._loadGeneration) return; // 已被更新的載入取代，停止繼續添加物件
+            tiles.forEach(tile => {
                 tile.name = "floor_default";
-                this.scene.add(tile); 
-                this.groundObjects.push(tile); 
+                this.scene.add(tile);
+                this.groundObjects.push(tile);
             });
         }
 
@@ -124,6 +131,7 @@ class SceneManager {
             for (const teamName in this.sceneData.teams) {
                 for (const p of this.sceneData.teams[teamName].players) {
                     const gltf = await this.loader.loadAsync(p.model);
+                    if (generation !== this._loadGeneration) return;
 
                     // --- 強化角色顯色邏輯 ---
                     gltf.scene.traverse(node => {
@@ -144,6 +152,7 @@ class SceneManager {
                     char.onFall = () => this.reset();
                     char.model.position.set(p.default_position.x, p.default_position.y, p.default_position.z);
                     char.pathData = p.path;
+                    char.scheduledMoves = p.scheduled_moves || [];
                     char.name = p.name;
                     this.scene.add(char.model);
                     this.characters.push(char);
@@ -155,7 +164,9 @@ class SceneManager {
 
         for (const mData of this.sceneData.monsters) {
             const gltf = await this.loader.loadAsync(mData.model);
-            const monster = new Monster(gltf.scene, mData);
+            if (generation !== this._loadGeneration) return;
+            // 用一個間接函式傳入 rng，這樣重置/快轉重新產生種子後，Monster 仍會拿到最新的亂數來源
+            const monster = new Monster(gltf.scene, mData, this.clock, () => this.rng());
             this.scene.add(monster.model);
             this.monsterInstances.push(monster);
         }
@@ -242,7 +253,7 @@ class SceneManager {
         });
         window.addEventListener('keydown', (e) => {
             if (this.controlledCharacter) {
-                this.actionBar.trigger(e.key, this.controlledCharacter);
+                this.actionBar.trigger(e.key, this.controlledCharacter, this.clock.now());
             }
         });
     }
@@ -258,15 +269,13 @@ class SceneManager {
             console.warn('Invalid skill or logic:', skillData);
             return;
         }
-        
 
-        const now = Date.now();
-        const noLog = data.no_log || data.config?.no_log;
+        const other = data.other || {};
+        const now = this.clock.now();
 
         // 1. 施放紀錄
-        if (!noLog && (now - (this.skillLogTimes.get(`${data.name}_c`) || 0) > 1000)) {
-            this._addLog(`Boss 施放 ${data.name}`, "text-yellow-400");
-            this.skillLogTimes.set(`${data.name}_c`, now);
+        if (!other.no_log) {
+            gameLog.addThrottled(`${data.name}_c`, `Boss 施放 ${data.name}`, "text-yellow-400", 1000, now);
         }
 
         this.characters.forEach(char => {
@@ -275,19 +284,17 @@ class SceneManager {
             const isPlayer = char === this.controlledCharacter;
             const hitKey = `${instanceId}_h`;
             // 2. 命中紀錄
-            if (isPlayer && (now - (this.skillLogTimes.get(hitKey) || 0) > 500)) {
-                this._addLog(`[命中] ${char.name} 被 ${data.name} 擊中了！`, "text-red-500 font-bold");
-                this.skillLogTimes.set(hitKey, now);
+            if (isPlayer) {
+                gameLog.addThrottled(hitKey, `[命中] ${char.name} 被 ${data.name} 擊中了！`, "text-red-500 font-bold", 500, now);
             }
 
             // 3. Debuff 紀錄
-            const debuff = data.config?.debuff;
+            const debuff = other.debuff;
             if (debuff) {
-                char.addStatusEffect({ ...debuff, startTime: now });
+                char.addStatusEffect({ ...debuff }, now);
                 const debuffKey = `${instanceId}_d`;
-                if (isPlayer && (now - (this.skillLogTimes.get(debuffKey) || 0) > 500)) {
-                    this._addLog(`[狀態] ${char.name} 獲得了 ${debuff.name}`, "text-purple-400");
-                    this.skillLogTimes.set(debuffKey, now);
+                if (isPlayer) {
+                    gameLog.addThrottled(debuffKey, `[狀態] ${char.name} 獲得了 ${debuff.name}`, "text-purple-400", 500, now);
                 }
             }
         });
@@ -296,8 +303,8 @@ class SceneManager {
     start() {
         if (this.isGameRunning) return;
 
-        this._clearLogs();
-        this._addLog("戰鬥開始！", "text-green-400 font-bold");
+        gameLog.clear();
+        gameLog.add("戰鬥開始！", "text-green-400 font-bold", 0);
 
         // 開始前再次確保所有狀態與技能重置
         this.characters.forEach(char => char.statusEffects = []);
@@ -305,17 +312,97 @@ class SceneManager {
         this.lastStatusFingerprint = ""; // 重置指紋，強制 UI 刷新
 
         this.isGameRunning = true;
-        this.gameStartTime = Date.now();
+        this.clock.set(0);
     }
 
     reset(selectedPlayerName = null) {
         this.isGameRunning = false;
-        this.gameStartTime = 0;
+        this.clock.set(0);
         this.lastStatusFingerprint = ""; // 確保 UI 指紋在重置時被清空
-        this._addLog("遊戲重置", "text-gray-400");
+        this._rollNewSeed(); // 換一次新的隨機戰鬥
+        gameLog.add("遊戲重置", "text-gray-400", 0);
 
-        if (!this.scene) return; 
+        if (!this.scene) return;
 
+        this._resetSimulationState(selectedPlayerName);
+        this._snapCameraToControlled();
+    }
+
+    // 快轉：從頭（種子不變）以固定步長同步重演到指定秒數，讓怪物/角色/預警/Buff 狀態
+    // 都和「真的玩到那一秒」完全一致。過程中每模擬幾個 tick 就實際畫一幀，讓使用者看得到播放過程。
+    async fastForwardTo(targetSeconds) {
+        if (!this.scene || !this.telegraphManager) return;
+        if (this._isFastForwarding) return; // 避免重複點擊造成兩個快轉同時跑、互相干擾狀態
+
+        const targetMs = Math.max(0, targetSeconds || 0) * 1000;
+
+        this._isFastForwarding = true; // 期間讓 animate() 的 rAF 迴圈讓出，避免重複模擬同一段時間
+        try {
+            this.isGameRunning = false;
+            this.clock.set(0);
+            this.rng = createRng(this.seed); // 同一顆種子從頭重演
+            this.lastStatusFingerprint = "";
+            gameLog.clear();
+
+            this._resetSimulationState();
+
+            this.isGameRunning = true;
+
+            let steps = 0;
+            let ticksSinceRender = 0;
+            while (this.clock.now() < targetMs && steps < FAST_FORWARD_MAX_STEPS) {
+                const step = Math.min(FAST_FORWARD_STEP_MS, targetMs - this.clock.now());
+                this._simulateTick(step / 1000);
+                steps++;
+                ticksSinceRender++;
+
+                if (ticksSinceRender >= FAST_FORWARD_TICKS_PER_FRAME) {
+                    ticksSinceRender = 0;
+                    this._snapCameraToControlled();
+                    this.lastStatusUIUpdate = -Infinity; // 繞過節流，讓每個顯示的畫面都刷新狀態列
+                    this._refreshUI();
+                    this.renderer.render(this.scene, this.camera);
+                    await new Promise(resolve => requestAnimationFrame(resolve)); // 讓瀏覽器真正畫出這一幀
+                }
+            }
+            if (steps >= FAST_FORWARD_MAX_STEPS) {
+                console.warn(`fastForwardTo: 已達最大模擬步數 (${FAST_FORWARD_MAX_STEPS})，提前停在 ${(this.clock.now() / 1000).toFixed(1)}s`);
+            }
+
+            gameLog.add(`已快轉至 ${this._formatTime(this.clock.now() / 1000)}`, "text-blue-400", this.clock.now());
+
+            this._snapCameraToControlled();
+            this.lastStatusUIUpdate = -Infinity;
+            this._refreshUI();
+            if (this.renderer && this.camera) this.renderer.render(this.scene, this.camera);
+        } finally {
+            this._isFastForwarding = false;
+            // 關鍵：快轉期間（含每次 await 讓出的空檔）都會佔用真實時間，但 animate() 全程被暫停未消化。
+            // 若不歸零 previousTime，下一個真實 animate() frame 會把整段累積的真實時間差當成 dt，
+            // 一次套用巨大的重力位移，把角色瞬間甩出地板以下觸發掉落重置。
+            // 歸零後 animate() 會把下一幀視為「第一幀」，dt 強制為 0，從快轉結束的狀態接續正常播放。
+            this.previousTime = 0;
+        }
+    }
+
+    // 怪物讀條/Boss 名單 UI + 受控角色座標/CD/Buff 狀態列，animate() 與快轉的定期畫面刷新共用
+    _refreshUI() {
+        this._updateMonsterUI();
+        if (this.controlledCharacter) {
+            this._updateUI(this.controlledCharacter.model.position, this.clock.now() / 1000);
+            this.actionBar.update(this.clock.now());
+            this._updateStatusUI(this.controlledCharacter.statusEffects, this.clock.now());
+        }
+    }
+
+    _formatTime(seconds) {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    // 重置 monster/character/telegraph/floor 的模擬狀態，供 reset() 與 fastForwardTo() 共用
+    _resetSimulationState(selectedPlayerName = null) {
         this.characters.forEach(char => {
             // 清除該角色的按鍵緩存，防止切換時角色自動亂跑
             char.keys = {};
@@ -342,7 +429,10 @@ class SceneManager {
 
             char.pathIndex = 0;
             char.isWaiting = false;
+            char.waitElapsed = 0;
             char.isPathFinished = false;
+            char.scheduledMoveIndex = 0;
+            char.commandTarget = null;
             char.velocityY = 0; // 重置重力速度
             char.statusEffects = []; // 清空 Buff/Debuff 陣列
         });
@@ -354,20 +444,13 @@ class SceneManager {
         const lists = document.querySelectorAll('#status-effects-container .status-list');
         lists.forEach(list => list.innerHTML = '');
 
-        if (this.controlledCharacter && this.controls) {
-            const p = this.controlledCharacter.model.position;
-            const offset = this.controlledCharacter.config.camera_offset || { x: 0, y: 0.5, z: -1 };
-            this.camera.position.set(p.x + offset.x, p.y + offset.y, p.z + offset.z);
-            this.controls.target.set(p.x, p.y + 0.3, p.z);
-            this.controls.update();
-        }
         if (this.telegraphManager) {
             this.telegraphManager.clearAll();
         }
 
         for (let i = this.scene.children.length - 1; i >= 0; i--) {
             const child = this.scene.children[i];
-            if(child.name === "") {
+            if (child.name === "") {
                 this.scene.remove(child);
             }
         }
@@ -387,50 +470,78 @@ class SceneManager {
         });
     }
 
-    animate = (currentTime) => {
-        this.animationId = requestAnimationFrame(this.animate);
-        const dt = this.previousTime === 0 ? 0 : (currentTime * 0.001 - this.previousTime);
-        this.previousTime = currentTime * 0.001;
+    _snapCameraToControlled() {
+        if (this.controlledCharacter && this.controls) {
+            const p = this.controlledCharacter.model.position;
+            const offset = this.controlledCharacter.config.camera_offset || { x: 0, y: 0.5, z: -1 };
+            this.camera.position.set(p.x + offset.x, p.y + offset.y, p.z + offset.z);
+            this.controls.target.set(p.x, p.y + 0.3, p.z);
+            this.controls.update();
+        }
+    }
 
+    // 單一 tick 的模擬邏輯，animate()（真實 rAF）與 fastForwardTo()（同步重演）共用，
+    // 確保兩條路徑跑出來的狀態完全一致。
+    _simulateTick(dt) {
         const activeGround = this.groundObjects.filter(f => !f.userData.isDisappeared);
-        let elapsed = 0;
 
         if (this.isGameRunning) {
-            elapsed = (Date.now() - this.gameStartTime) / 1000;
-            this._checkInteractions(dt, activeGround);
+            this.clock.advance(dt * 1000);
+            const nowMs = this.clock.now();
+            const elapsed = nowMs / 1000;
+
+            this._checkInteractions(dt, activeGround, nowMs);
             this.telegraphManager.update();
             this.monsterInstances.forEach(monster => {
-                monster.update(
-                    elapsed, 
-                    true, 
-                    this.telegraphManager, 
-                    this._handleAttack, 
-                    this.characters,
-                    (msg, cls) => this._addLog(msg, cls) // 傳入日誌回調
-                );
+                monster.update(elapsed, true, this.telegraphManager, this._handleAttack, this.characters);
             });
 
             this.characters.forEach(char => {
-                char.updateStatusEffects(dt, this.telegraphManager, (msg, color) => this._addLog(msg, color));
-                if (!char.isPlayer) char.moveByPath(char.pathData, this.groundObjects, dt);
+                char.updateStatusEffects(dt, this.telegraphManager, nowMs);
+                if (!char.isPlayer) {
+                    // 絕對時間觸發的一次性移動指令（例如特定技能施放前的站位）
+                    while (char.scheduledMoveIndex < char.scheduledMoves.length
+                        && elapsed >= char.scheduledMoves[char.scheduledMoveIndex].time) {
+                        const mv = char.scheduledMoves[char.scheduledMoveIndex];
+                        char.setMoveTarget(mv.position, mv.rotation);
+                        char.scheduledMoveIndex++;
+                    }
+                    char.moveByPath(char.pathData, this.groundObjects, dt);
+                }
             });
-            this._updateMonsterUI();
         } else {
             this.monsterInstances.forEach(monster => {
-                monster.update(0, false, null, null, this.characters, null);
+                monster.update(0, false, null, null, this.characters);
             });
 
             this.characters.forEach(char => {
-                char.updateStatusEffects(dt, null, null);
+                char.updateStatusEffects(dt, null, this.clock.now());
             });
         }
 
         if (this.controlledCharacter) {
-            const oldPos = this.controlledCharacter.model.position.clone();
             this.controlledCharacter.moveByPlayer(this.controls, activeGround, dt);
-            this._updateUI(this.controlledCharacter.model.position, elapsed);
-            this.actionBar.update(); // 更新 CD 顯示
-            this._updateStatusUI(this.controlledCharacter.statusEffects);
+        }
+    }
+
+    animate = (currentTime) => {
+        this.animationId = requestAnimationFrame(this.animate);
+        // 快轉自己會驅動 _simulateTick 並视需要畫幀；這裡讓出，避免同一段模擬時間被重複跑兩次
+        if (this._isFastForwarding) return;
+
+        const rawDt = this.previousTime === 0 ? 0 : (currentTime * 0.001 - this.previousTime);
+        // 夾住單一影格的 dt 上限：分頁被切到背景、掉幀、或快轉剛結束時，真實時間差可能
+        // 一次暴衝到數百毫秒甚至數秒。角色重力/落地判定的容許誤差很小（見 Character.js），
+        // 沒有夾住的話一大步重力就會讓角色瞬間掉出地板判定區間，誤觸「掉出場外」重置。
+        const dt = Math.min(rawDt, MAX_FRAME_DT);
+        this.previousTime = currentTime * 0.001;
+
+        const oldPos = this.controlledCharacter ? this.controlledCharacter.model.position.clone() : null;
+
+        this._simulateTick(dt);
+        this._refreshUI();
+
+        if (this.controlledCharacter) {
             const delta = this.controlledCharacter.model.position.clone().sub(oldPos);
             if (delta.length() > 10) {
                 const p = this.controlledCharacter.config.default_position;
@@ -447,24 +558,22 @@ class SceneManager {
         this.renderer.render(this.scene, this.camera);
     }
 
-    _updateStatusUI(effects) {
-        const now = Date.now();
-
-        if (now - this.lastStatusUIUpdate < 100) return;
-        this.lastStatusUIUpdate = now;
+    _updateStatusUI(effects, nowMs) {
+        if (nowMs - this.lastStatusUIUpdate < 100) return;
+        this.lastStatusUIUpdate = nowMs;
 
         const container = document.getElementById('status-effects-container');
         if (!container) return;
 
         const currentFingerprint = (effects || []).map(e => {
-            const remain = Math.max(0, Math.ceil(e.duration - (now - e.startTime) / 1000));
+            const remain = Math.max(0, Math.ceil(e.duration - (nowMs - e.startTime) / 1000));
             return `${e.name}_${remain}`;
         }).join('|');
 
         if (this.lastStatusFingerprint === currentFingerprint) return;
         this.lastStatusFingerprint = currentFingerprint;
 
-        // 修改：直接傳入 Element 而非 Selector 字符串
+        // 直接傳入 Element 而非 Selector 字符串
         const updateGroup = (selector, list) => {
             const listContainer = container.querySelector(`${selector} .status-list`);
             if (!listContainer) return;
@@ -478,7 +587,7 @@ class SceneManager {
             list.forEach(e => {
                 const id = `status-${e.name.replace(/\s+/g, '')}-${e.startTime}`;
                 currentIds.add(id);
-                const remain = Math.max(0, Math.ceil(e.duration - (Date.now() - e.startTime) / 1000));
+                const remain = Math.max(0, Math.ceil(e.duration - (nowMs - e.startTime) / 1000));
 
                 let el = document.getElementById(id);
                 if (!el) {
@@ -509,7 +618,7 @@ class SceneManager {
         updateGroup('.debuff-group', effects.filter(e => !e.isBuff));
     }
 
-    _checkInteractions(dt, activeGround) {
+    _checkInteractions(dt, activeGround, nowMs) {
         this.groundObjects.forEach(f => f.userData.activePlayers.clear());
         this.characters.forEach(char => {
             // 修正：使用成員變數而非 new
@@ -520,7 +629,7 @@ class SceneManager {
             const hit = this.interactionRaycaster.intersectObjects(activeGround);
             if (hit.length > 0) hit[0].object.userData.activePlayers.add(char.name);
         });
-        this.groundObjects.forEach(f => Floor.updateMechanics(f, dt));
+        this.groundObjects.forEach(f => Floor.updateMechanics(f, dt, nowMs));
     }
 
     _updateUI(pos, elapsed = 0) {
@@ -550,7 +659,7 @@ class SceneManager {
         const container = document.getElementById('monster-list-container');
         if (!container) return;
 
-        const now = Date.now();
+        const now = this.clock.now();
         this.monsterInstances.forEach((monster, index) => {
             if (!monster.spawned) return;
 
@@ -603,3 +712,4 @@ const manager = new SceneManager();
 export const createScene = (id, data, name, isDebug) => manager.init(id, data, name, isDebug);
 export const startGame = () => manager.start();
 export const resetGame = (name) => manager.reset(name);
+export const fastForwardTo = (seconds) => manager.fastForwardTo(seconds);

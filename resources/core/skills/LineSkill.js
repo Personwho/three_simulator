@@ -2,15 +2,15 @@ import * as THREE from 'three';
 import { BaseSkill } from './BaseSkill.js';
 
 export class LineSkill extends BaseSkill {
-    createTelegraphMesh(skillData) {
-        const width = skillData.config?.width || 2;
-        const length = skillData.config?.length || 10;
-        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
+    _buildMesh(shape, defaultColor) {
+        const width = shape.width || 2;
+        const length = shape.length || 10;
+        const opacity = (shape.opacity !== undefined) ? shape.opacity : 0.5;
 
         // 建立長方形幾何體
         const geometry = new THREE.PlaneGeometry(width, length);
         const material = new THREE.MeshBasicMaterial({
-            color: 0xff0000, // 預設紅色
+            color: (shape.color !== undefined) ? shape.color : defaultColor,
             transparent: true,
             opacity: opacity,
             side: THREE.DoubleSide,
@@ -26,9 +26,18 @@ export class LineSkill extends BaseSkill {
         return mesh;
     }
 
+    createPreAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.preShape(skillData), 0xff0000);
+    }
+
+    createAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.attackShape(skillData), 0xff0000);
+    }
+
     checkHit(charPos, attackPos, attackRotationY, skillData) {
-        const width = skillData.config?.width || 2;
-        const length = skillData.config?.length || 10;
+        const shape = BaseSkill.attackShape(skillData);
+        const width = shape.width || 2;
+        const length = shape.length || 10;
 
         // 1. 計算角色相對於攻擊起點的偏移向量
         const dx = charPos.x - attackPos.x;

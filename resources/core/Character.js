@@ -4,7 +4,11 @@ import { StatusFactory } from './status/StatusFactory.js';
 export class Character {
     pathIndex = 0; // 當前路徑索引
     isWaiting = false; // 是否正在停留
-    waitTimeStart = 0; // 開始停留的時間
+    waitElapsed = 0; // 已停留的時間（秒，隨 deltaTime 累加，可被快轉重演正確驅動）
+
+    scheduledMoves = []; // 由 Scene 依 player.json 的 scheduled_moves 填入：[{time, position, rotation}]
+    scheduledMoveIndex = 0; // 已觸發到第幾個 scheduledMoves
+    commandTarget = null; // 一次性移動指令 {position, rotation}，優先於既定 path，抵達後自動清除
 
     // 建立重複使用的運算物件，避免每一幀都 new
     static _tempVec = new THREE.Vector3();
@@ -46,30 +50,69 @@ export class Character {
         }
 
         this.model.name = config.name || "player";
+
+        if (config.name) {
+            this.model.add(this._createNameTag(config.name));
+        }
     }
 
-    addStatusEffect(effectData) {
+    // 建立頭頂名牌（永遠面向相機的文字 Sprite），加進 model 讓它自動跟著角色移動。
+    // 座標與大小都採用「本地座標」，比照 _setupHelpers 那顆碰撞偵測用的圓柱體（height=1 代表約略一個身高），
+    // 不需要另外除以 model 的縮放值——因為 Sprite 是 model 的子物件，會跟角色一起等比縮放。
+    _createNameTag(name) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.font = 'bold 40px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.strokeText(name, canvas.width / 2, canvas.height / 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter;
+
+        const material = new THREE.SpriteMaterial({
+            map: texture,
+            depthTest: false, // 不被場景其他物件遮擋，永遠可讀
+            depthWrite: false,
+            transparent: true
+        });
+        const sprite = new THREE.Sprite(material);
+        sprite.renderOrder = 999;
+
+        sprite.scale.set(0.6, 0.15, 1);
+        sprite.position.set(0, 2.35, 0); // 頭頂上方（實測值，模型本地座標的身高遠比碰撞圓柱體的 height=1 高）
+
+        return sprite;
+    }
+
+    addStatusEffect(effectData, nowMs) {
         // 尋找是否已有同名狀態
         const existingIndex = this.statusEffects.findIndex(e => e.name === effectData.name);
 
         if (existingIndex !== -1) {
             // 如果已存在，僅更新開始時間（重新計時），不新增物件
-            this.statusEffects[existingIndex].startTime = Date.now();
+            this.statusEffects[existingIndex].startTime = nowMs;
             this.statusEffects[existingIndex].duration = effectData.duration;
             return;
         }
 
         // 不存在才新增
-        const effect = StatusFactory.create(this, effectData);
+        const effect = StatusFactory.create(this, { ...effectData, startTime: nowMs });
         this.statusEffects.push(effect);
     }
 
-    updateStatusEffects(deltaTime, telegraphManager, addLog) {
+    updateStatusEffects(deltaTime, telegraphManager, nowMs) {
         // 1. 執行更新與過期邏輯
         this.statusEffects.forEach(effect => {
-            effect.update(deltaTime);
+            effect.update(deltaTime, nowMs);
             if (effect.isExpired) {
-                effect.onExpire(telegraphManager, addLog);
+                effect.onExpire(telegraphManager, nowMs);
             }
         });
 
@@ -131,9 +174,47 @@ export class Character {
         return null;
     }
 
+    // 下達一次性移動指令：優先於既定 path，抵達後自動停止並保持在該位置
+    // （設定當下即視為 path 已結束，避免抵達後又被舊 path 的殘留進度接管走回去）
+    setMoveTarget(position, rotation) {
+        this.commandTarget = { position, rotation };
+        this.isPathFinished = true;
+    }
+
+    _advanceCommandTarget(deltaTime) {
+        const { position, rotation } = this.commandTarget;
+        const targetVec = new THREE.Vector3(position.x, this.model.position.y, position.z);
+        const direction = new THREE.Vector3().subVectors(targetVec, this.model.position);
+        const distance = direction.length();
+
+        if (distance > 0.1) {
+            direction.normalize();
+            const moveStep = Math.min(this.currentMoveSpeed * deltaTime, distance);
+            this.model.position.add(direction.clone().multiplyScalar(moveStep));
+            this.model.rotation.y = Math.atan2(direction.x, direction.z) + Math.PI;
+        } else {
+            if (rotation) {
+                this.model.rotation.set(
+                    (rotation.x || 0) * (Math.PI / 180),
+                    (rotation.y || 0) * (Math.PI / 180),
+                    (rotation.z || 0) * (Math.PI / 180)
+                );
+            }
+            this.commandTarget = null; // 抵達，交回原本流程（path 已結束，之後就保持原地）
+        }
+    }
+
     // NPC 路徑移動
     moveByPath(pathArray, groundObjects, deltaTime) {
-        if (this.isPlayer || this.isRespawning || !pathArray || pathArray.length === 0) return;
+        if (this.isPlayer || this.isRespawning) return;
+
+        if (this.commandTarget) {
+            this._advanceCommandTarget(deltaTime);
+            this._handlePhysics(null, groundObjects, deltaTime);
+            return;
+        }
+
+        if (!pathArray || pathArray.length === 0) return;
 
         // 如果已經抵達最後一個點且結束停留，則只處理物理並返回
         if (this.isPathFinished) {
@@ -152,8 +233,8 @@ export class Character {
 
         // 如果正在停留中
         if (this.isWaiting) {
-            const elapsed = (Date.now() - this.waitTimeStart) / 1000;
-            if (elapsed >= (target.stay || 0)) {
+            this.waitElapsed += deltaTime;
+            if (this.waitElapsed >= (target.stay || 0)) {
                 this.isWaiting = false;
                 if (this.pathIndex < pathArray.length - 1) {
                     this.pathIndex++;
@@ -194,7 +275,7 @@ export class Character {
             // 抵達節點
             if (target.stay > 0) {
                 this.isWaiting = true;
-                this.waitTimeStart = Date.now();
+                this.waitElapsed = 0;
             } else {
                 if (this.pathIndex < pathArray.length - 1) {
                     this.pathIndex++;

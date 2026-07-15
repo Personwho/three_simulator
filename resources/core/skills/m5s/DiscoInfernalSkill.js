@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BaseSkill } from '../BaseSkill.js';
+import { gameLog } from '../../GameLog.js';
 
 export class DiscoInfernalSkill extends BaseSkill {
     constructor(skillData) {
@@ -7,15 +8,15 @@ export class DiscoInfernalSkill extends BaseSkill {
         this.data = skillData;
     }
 
-    createTelegraphMesh(skillData) {
+    _buildMesh(shape, defaultColor) {
         // 從配置中讀取半徑，預設 15 (全場)
-        const radius = skillData.config?.radius || 15;
-        const opacity = (skillData.opacity !== undefined) ? skillData.opacity : 0.5;
+        const radius = shape.radius || 15;
+        const opacity = (shape.opacity !== undefined) ? shape.opacity : 0.5;
 
         // 建立圓形預警區域網格
         const geometry = new THREE.CircleGeometry(radius, 64);
         const material = new THREE.MeshBasicMaterial({
-            color: 0xffa500, // 橘色預警
+            color: (shape.color !== undefined) ? shape.color : defaultColor,
             transparent: true,
             opacity: opacity,
             side: THREE.DoubleSide,
@@ -29,20 +30,28 @@ export class DiscoInfernalSkill extends BaseSkill {
         return mesh;
     }
 
+    createPreAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.preShape(skillData), 0xffa500);
+    }
+
+    createAttackMesh(skillData) {
+        return this._buildMesh(BaseSkill.attackShape(skillData), 0xff0000);
+    }
+
     checkHit(charPos, attackPos, attackRotationY, skillData) {
-        const radius = skillData.config?.radius || 15;
+        const radius = BaseSkill.attackShape(skillData).radius || 15;
         const dist = new THREE.Vector2(charPos.x, charPos.z).distanceTo(new THREE.Vector2(attackPos.x, attackPos.z));
         return dist <= radius;
     }
 
-    runSequence(monster, telegraphManager, onAttack, allCharacters, addLog) {
-        const config = this.data.config;
-        const castTime = (this.data.cast_time || 0) * 1000;
+    runSequence(monster, telegraphManager, onAttack, allCharacters) {
+        const other = this.other;
+        const castTime = (other.cast_time || 0) * 1000;
         const debuffName = "蹦迪";
         const debuffIcon = "assets/icons/蹦迪.webp";
 
         // 隨機決定哪一組獲得短時長 (24s)
-        const isGroupAFirst = Math.random() > 0.5;
+        const isGroupAFirst = monster.rng() > 0.5;
         const durationA = isGroupAFirst ? 24 : 32;
         const durationB = isGroupAFirst ? 32 : 24;
 
@@ -54,14 +63,14 @@ export class DiscoInfernalSkill extends BaseSkill {
 
         const skillWrapper = { data: this.data, logic: this };
 
-        // 1. 處理純傷害預警 (4秒後判定傷害)
+        // 1. 處理純傷害預警 (讀條結束後判定傷害)
         telegraphManager.createTelegraph(skillWrapper, monster.model.position, (data, pos, rot, id) => {
             onAttack(skillWrapper, pos, rot, id);
         });
 
         // 2. 直接分派 Debuff (讀條結束時執行)
         monster.setTimeout(() => {
-            if (addLog) addLog(`${monster.config.name} 分派 Debuff 狀態`, "text-pink-300");
+            gameLog.add(`${monster.config.name} 分派 Debuff 狀態`, "text-pink-300", monster.clock.now());
 
             if (!allCharacters) return;
 
@@ -75,9 +84,8 @@ export class DiscoInfernalSkill extends BaseSkill {
                         icon: debuffIcon,
                         duration: group.duration,
                         value: 0,
-                        isBuff: false,
-                        startTime: Date.now()
-                    });
+                        isBuff: false
+                    }, monster.clock.now());
                 }
             });
         }, castTime);

@@ -19,6 +19,7 @@ export class Tool {
                         p.default_position.x *= -1;
                         if (p.camera_offset) p.camera_offset.x *= -1; // 新增：轉換相機偏移 X
                         if (p.path) p.path.forEach(s => { if (s.position) s.position.x *= -1; });
+                        if (p.scheduled_moves) p.scheduled_moves.forEach(s => { if (s.position) s.position.x *= -1; });
                     });
                 });
                 break;
@@ -32,40 +33,35 @@ export class Tool {
                         });
                     }
 
-                    m.skills.forEach(s => {
-                        if (s.config && s.config.position) {
-                            if (Array.isArray(s.config.position)) {
-                                // 如果是陣列，遍歷每一筆資料轉換 x 座標
-                                s.config.position.forEach(pos => {
-                                    if (pos && typeof pos.x === 'number') {
-                                        pos.x *= -1;
-                                    }
-                                });
-                            } else {
-                                // 如果是單一物件
-                                s.config.position.x *= -1;
-                            }
-                        }
-
-                        if(s.config && s.config.skills) {
-                            s.config.skills.forEach(subSkill => {
-                                if (subSkill.config && subSkill.config.position) {
-                                    if (Array.isArray(subSkill.config.position)) {
-                                        subSkill.config.position.forEach(pos => {
-                                            if (pos && typeof pos.x === 'number') {
-                                                pos.x *= -1;
-                                            }
-                                        });
-                                    } else {
-                                        subSkill.config.position.x *= -1;
-                                    }
-                                }
-                            });
-                        }
-                    });
+                    m.skills.forEach(s => Tool._flipSkillPositions(s));
                 });
                 break;
         }
         return copy;
+    }
+
+    // 技能 JSON 的錨點座標一律放在 other.position（單點物件或陣列皆可），
+    // 遞迴處理是因為 shuffled_sequence/random_single 包裝技能會在 other.skills[] 巢狀完整子技能。
+    static _flipSkillPositions(skill) {
+        if (!skill || !skill.other) return;
+
+        Tool._flipPosition(skill.other.position);
+        Tool._flipPosition(skill.other.bomb_a_positions);
+        Tool._flipPosition(skill.other.bomb_b_positions);
+
+        if (Array.isArray(skill.other.skills)) {
+            skill.other.skills.forEach(sub => Tool._flipSkillPositions(sub));
+        }
+    }
+
+    static _flipPosition(position) {
+        if (!position) return;
+        if (Array.isArray(position)) {
+            position.forEach(pos => {
+                if (pos && typeof pos.x === 'number') pos.x *= -1;
+            });
+        } else if (typeof position.x === 'number') {
+            position.x *= -1;
+        }
     }
 }

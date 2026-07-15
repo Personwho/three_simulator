@@ -1,4 +1,4 @@
 // 抽象基類
 export class BaseMechanic {
-    update(floor, dt) { throw new Error("Must implement"); }
+    update(floor, dt, nowMs) { throw new Error("Must implement"); }
 }

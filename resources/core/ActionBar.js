@@ -6,7 +6,7 @@ export class ActionBar {
                 name: '衝刺',
                 icon: 'assets/icons/衝刺.png',
                 cd: 20,
-                lastUsed: 0,
+                lastUsed: -Infinity, // 一開始/每次重置都直接可用，不受目前時鐘數值影響
                 // 將技能效果數據化
                 effect: { name: "衝刺", value: 1.4, duration: 10, isBuff: true }
             }
@@ -38,26 +38,24 @@ export class ActionBar {
         });
     }
 
-    trigger(key, character) {
+    trigger(key, character, nowMs) {
         const action = this.actions[key];
         if (!action || !character) return;
 
-        const now = Date.now();
-        if (now - action.lastUsed < action.cd * 1000) return;
+        if (nowMs - action.lastUsed < action.cd * 1000) return;
 
         // 通用的技能觸發邏輯
         if (action.effect) {
             character.addStatusEffect({
                 ...action.effect,
-                icon: action.icon,
-                startTime: now
-            });
-            action.lastUsed = now;
+                icon: action.icon
+            }, nowMs);
+            action.lastUsed = nowMs;
         }
     }
 
-    update() {
-        const now = Date.now();
+    update(nowMs) {
+        const now = nowMs;
         Object.keys(this.actions).forEach(key => {
             const action = this.actions[key];
             const slot = this.slots[key];
@@ -75,7 +73,10 @@ export class ActionBar {
     }
 
     reset() {
-        Object.keys(this.actions).forEach(key => this.actions[key].lastUsed = 0);
-        this.update();
+        // 設為 -Infinity 而非 0：重置後時鐘會回到 0，若設 0 會被誤判成「剛用過、還在冷卻」
+        Object.keys(this.actions).forEach(key => this.actions[key].lastUsed = -Infinity);
+        Object.values(this.slots).forEach(slot => {
+            if (slot.overlay) slot.overlay.style.display = 'none';
+        });
     }
 }
