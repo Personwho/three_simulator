@@ -462,6 +462,16 @@
                 }
             },
             {
+                "name": "登天夜狂熱",
+                "type": "ArcadyNightFeverSkill",
+                "time": 149.5,
+                "cast_time": 4,
+                "config": {
+                    "interval": 2.5,
+                    "duration": 0.5
+                }
+            },
+            {
                 "name": "登天夜狂熱-鋼鐵圓環依序施放",
                 "type": "ConcentricDonutSkill",
                 "time": 149.5,

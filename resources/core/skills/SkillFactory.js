@@ -5,6 +5,7 @@ import { DonutSkill } from './DonutSkill.js';
 import { LineSkill } from './LineSkill.js';
 import { SquareSkill } from './SquareSkill.js';
 // M5S
+import { ArcadyNightFeverSkill } from './m5s/ArcadyNightFeverSkill.js';
 import { DiscoInfernalSkill } from './m5s/DiscoInfernalSkill.js';
 import { FunkyFloorSkill } from './m5s/FunkyFloorSkill.js';
 import { LightSkill } from './m5s/LightSkill.js';
@@ -24,6 +25,7 @@ export class SkillFactory {
             case 'LineSkill': return new LineSkill(skillData);
             case 'SquareSkill': return new SquareSkill(skillData);
             // M5S
+            case 'ArcadyNightFeverSkill': return new ArcadyNightFeverSkill(skillData);
             case 'DiscoInfernalSkill': return new DiscoInfernalSkill(skillData);
             case 'FunkyFloorSkill': return new FunkyFloorSkill(skillData);
             case 'LightSkill': return new LightSkill(skillData);

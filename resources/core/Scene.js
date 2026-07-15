@@ -8,7 +8,6 @@ import { Monster } from './Monster.js';
 import { Tool } from './Tool.js';
 import { ActionBar } from './ActionBar.js';
 import { SkillFactory } from './skills/SkillFactory.js';
-import { toTrianglesDrawMode } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 class SceneManager {
     constructor() {
@@ -185,15 +184,6 @@ class SceneManager {
         frontLight.name = "default";
         frontLight.position.set(0, 10, 20); // 從相機方向往回照
         this.scene.add(frontLight);
-
-        // this.characters.forEach(char => {
-        //     const offsets = [[0, 1.2, 1.5], [0, 1.2, -1.5], [1.5, 1.2, 0], [-1.5, 1.2, 0]];
-        //     offsets.forEach(off => {
-        //         const light = new THREE.PointLight(0xffffff, 2, 0);
-        //         light.position.set(...off);
-        //         char.model.add(light);
-        //     });
-        // });
     }
 
     _setupHelpers() {
